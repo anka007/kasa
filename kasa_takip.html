@@ -105,7 +105,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-si
 .cal-day.tatil-gun{background:rgba(255,107,107,.2);color:var(--err);}
 .cal-day.tatil-gun:hover{background:rgba(255,107,107,.3);}
 .cal-day.kapali-gun{background:rgba(255,107,107,.08);color:rgba(255,107,107,.5);cursor:default;}
-.cal-day.kapali-gun:hover{background:rgba(255,107,107,.12);}.busy-slot{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;margin-bottom:5px;font-size:12px;}
+.cal-day.kapali-gun:hover{background:rgba(255,107,107,.12);}.cal-day.gecmis-gun{opacity:.4;}.cal-day.gecmis-gun.today{opacity:1;}.busy-slot{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;margin-bottom:5px;font-size:12px;}
 .busy-time{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ac);min-width:45px;}
 .free-hint{font-size:11px;color:var(--mu);padding:8px 0;line-height:1.7;}
 /* SEANS */
@@ -444,7 +444,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <button class="chip" data-f="nf"  onclick="fltI(this)">🧾 Nakit Fişli</button>
     <button class="chip" data-f="nfs" onclick="fltI(this)">💵 Nakit Fişsiz</button>
     <button class="chip" data-f="bir" onclick="fltI(this)">👤 Bireysel</button>
-    <button class="chip" data-f="yurt" onclick="fltI(this)">✈️ Yurt Dışı</button>
+    <button class="chip" data-f="yurt" onclick="fltI(this)">🌍 Diğer Gelirler</button>
     <button class="chip" data-f="virman" onclick="fltI(this)">🔄 Virman</button>
     <button class="chip" data-f="gider" onclick="fltI(this)">🔴 Gider</button>
   </div>
@@ -852,7 +852,7 @@ function nextDay(d){const dt=new Date(d);dt.setDate(dt.getDate()+1);return dt.to
 function sortedI(){return[...D.isl].sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);}
 function esc(s){return(s||'').replace(/'/g,"\\'");}
 function sw(id,v){const e=document.getElementById(id);if(e)e.classList.toggle('on',!!v);}
-function gkIsim(gk){return{pos:'🏦 POS',nak:'💰 Nakit',bir:'👤 Bireysel',yurt:'✈️ Yurt Dışı'}[gk]||gk;}
+function gkIsim(gk){return{pos:'🏦 POS',nak:'💰 Nakit',bir:'👤 Bireysel',yurt:'🌍 Diğer Gelirler'}[gk]||gk;}
 
 // Fiyat key: "HizIsim|Sure"
 function getPlatFiyat(platIsim, hizIsim, sureDk){
@@ -1149,7 +1149,7 @@ function silI(id){
 // ===================== RENDER =====================
 const TIPLER={
   pos:{l:'POS',i:'🏦'},nf:{l:'Nakit Fişli',i:'🧾'},nfs:{l:'Nakit Fişsiz',i:'💵'},
-  bir:{l:'Bireysel',i:'👤'},yurt:{l:'Yurt Dışı/TL',i:'✈️'},
+  bir:{l:'Bireysel',i:'👤'},yurt:{l:'Diğer Gelirler',i:'🌍'},
   gider:{l:'Gider',i:'🔴'},virman:{l:'Virman',i:'🔄'}
 };
 
@@ -1532,6 +1532,7 @@ function renderCal(){
     let extraClass='';
     if(isTatilGun) extraClass='tatil-gun';
     else if(isKapali) extraClass='kapali-gun';
+    if(t<bug) extraClass+=' gecmis-gun';
     html+=`<div class="cal-day ${isToday?'today':''} ${isSel?'selected':''} ${hasRV?'has-rv':''} ${extraClass}" onclick="calSelGun('${t}')">${d}</div>`;
   }
   el.innerHTML=html;
@@ -1545,15 +1546,23 @@ function renderCalDet(tarih){
   document.getElementById('cal-det-lbl').textContent=`${parseInt(d)} ${AYLAR[parseInt(m)-1]} ${y}`;
   const el=document.getElementById('cal-det');
 
+  // Günün masaj işlemleri (kaç masaj, ne kadar kazanç)
+  const gunIsl=D.isl.filter(x=>x.tarih===tarih&&['pos','nf','nfs','bir'].includes(x.tip));
+  const gunMasajSayisi=gunIsl.length;
+  const gunKazanc=gunIsl.reduce((s,x)=>s+x.tutar,0);
+  const gunOzetHtml=gunMasajSayisi
+    ? `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);">💆 ${gunMasajSayisi} masaj</div><div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gr);">${para(gunKazanc)}</div></div></div>`
+    : `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="font-size:12px;color:var(--mu);">💆 Bu gün masaj kaydı yok</div></div>`;
+
   // Kapalı gün kontrolü
   if(isTatil(tarih)){
     const tat=D.tatiller.find(t=>tarih>=t.bas&&tarih<=t.bit);
-    el.innerHTML=`<div class="free-hint" style="color:var(--err);">🔴 Tatil / Kapalı${tat&&tat.not?' · '+tat.not:''}</div>`;
+    el.innerHTML=gunOzetHtml+`<div class="free-hint" style="color:var(--err);">🔴 Tatil / Kapalı${tat&&tat.not?' · '+tat.not:''}</div>`;
     return;
   }
   if(!isCalismaGunu(tarih)){
     const gun=new Date(tarih+'T12:00').getDay();
-    el.innerHTML=`<div class="free-hint" style="color:var(--err);">🔴 ${GUN_ISIM[gun]} günleri çalışılmıyor.</div>`;
+    el.innerHTML=gunOzetHtml+`<div class="free-hint" style="color:var(--err);">🔴 ${GUN_ISIM[gun]} günleri çalışılmıyor.</div>`;
     return;
   }
 
@@ -1566,7 +1575,7 @@ function renderCalDet(tarih){
 
   const rvs=D.rv.filter(r=>r.tarih===tarih).sort((a,b)=>a.saat.localeCompare(b.saat));
 
-  let html=`<div style="font-size:11px;color:var(--ac2);margin-bottom:8px;font-weight:500;">⏰ ${acSaat} – ${kaSaat}</div>`;
+  let html=gunOzetHtml+`<div style="font-size:11px;color:var(--ac2);margin-bottom:8px;font-weight:500;">⏰ ${acSaat} – ${kaSaat}</div>`;
 
   if(!rvs.length){
     el.innerHTML=html+`<div class="free-hint">Randevu yok. Tüm gün müsait.</div>`;
@@ -2062,18 +2071,25 @@ function renderOzet(){
 
   let topKazanc=0,topGider=0,posG=0,nfG=0,nfsG=0,birG=0,yurtG=0;
   const gunler=new Set();
+  const masajGunler=new Set();
   l.forEach(x=>{
     if(x.tip==='gider'){topGider+=x.tutar;}
     else{
       topKazanc+=x.tutar;
-      if(x.tip==='pos')posG+=x.tutar;
-      else if(x.tip==='nf')nfG+=x.tutar;
-      else if(x.tip==='nfs')nfsG+=x.tutar;
-      else if(x.tip==='bir')birG+=x.tutar;
+      if(x.tip==='pos'){posG+=x.tutar;masajGunler.add(x.tarih);}
+      else if(x.tip==='nf'){nfG+=x.tutar;masajGunler.add(x.tarih);}
+      else if(x.tip==='nfs'){nfsG+=x.tutar;masajGunler.add(x.tarih);}
+      else if(x.tip==='bir'){birG+=x.tutar;masajGunler.add(x.tarih);}
       else if(x.tip==='yurt')yurtG+=x.tutar;
       gunler.add(x.tarih);
     }
   });
+
+  const masajKazanc=posG+nfG+nfsG+birG;
+  const digerGelirKazanc=yurtG;
+  const masajYuzde=topKazanc?+(masajKazanc/topKazanc*100).toFixed(1):0;
+  const digerGelirYuzde=topKazanc?+(digerGelirKazanc/topKazanc*100).toFixed(1):0;
+  const masajGunlukOrt=masajGunler.size?masajKazanc/masajGunler.size:0;
 
   const vergiTabani=posG+nfG;
   const tahminiVergi=+(vergiTabani*(D.par.vergi||6)/100).toFixed(2);
@@ -2090,7 +2106,13 @@ function renderOzet(){
       <div class="stat-c"><div class="stat-l">Toplam Harcama</div><div class="stat-v" style="color:var(--err)">-${para(topGider)}</div></div>
       <div class="stat-c"><div class="stat-l">Net Kalan</div><div class="stat-v" style="color:var(--ac2)">${para(netKalan)}</div></div>
       <div class="stat-c"><div class="stat-l">Günlük Ort. Kazanç</div><div class="stat-v" style="color:var(--bl)">${gunler.size?para(topKazanc/gunler.size):para(0)}</div></div>
+      <div class="stat-c"><div class="stat-l">Günlük Ort. Masaj Kazancı</div><div class="stat-v" style="color:var(--gr)">${para(masajGunlukOrt)}</div></div>
       <div class="stat-c"><div class="stat-l">Tahmini Vergi (%${D.par.vergi||6})</div><div class="stat-v" style="color:var(--warn)">${para(tahminiVergi)}</div></div>
+    </div>
+    <div class="fc">
+      <div class="ftl">Masaj vs. Diğer Gelir</div>
+      <div class="rr"><div class="rl"><div class="rdot" style="background:var(--gr)"></div>💆 Masajdan Kazanç</div><div class="rv2" style="color:var(--gr)">${para(masajKazanc)} <span style="color:var(--mu);font-size:10px;">(%${masajYuzde})</span></div></div>
+      <div class="rr" style="border-bottom:none;"><div class="rl"><div class="rdot" style="background:var(--warn)"></div>🌍 Diğer Gelirlerden</div><div class="rv2" style="color:var(--warn)">${para(digerGelirKazanc)} <span style="color:var(--mu);font-size:10px;">(%${digerGelirYuzde})</span></div></div>
     </div>
     <div class="fc">
       <div class="ftl">Kazanç Dağılımı</div>
@@ -2098,7 +2120,7 @@ function renderOzet(){
       <div class="rr"><div class="rl"><div class="rdot" style="background:var(--gr)"></div>🧾 Nakit Fişli</div><div class="rv2" style="color:var(--gr)">${para(nfG)}</div></div>
       <div class="rr"><div class="rl"><div class="rdot" style="background:var(--or)"></div>💵 Nakit Fişsiz</div><div class="rv2" style="color:var(--or)">${para(nfsG)}</div></div>
       <div class="rr"><div class="rl"><div class="rdot" style="background:var(--pu)"></div>👤 Bireysel</div><div class="rv2" style="color:var(--pu)">${para(birG)}</div></div>
-      <div class="rr"><div class="rl"><div class="rdot" style="background:var(--warn)"></div>✈️ Yurt Dışı/TL</div><div class="rv2" style="color:var(--warn)">${para(yurtG)}</div></div>
+      <div class="rr"><div class="rl"><div class="rdot" style="background:var(--warn)"></div>🌍 Diğer Gelirler</div><div class="rv2" style="color:var(--warn)">${para(yurtG)}</div></div>
       <div class="rr" style="border-bottom:none;"><div class="rl"><div class="rdot" style="background:var(--tx)"></div>Vergiye giren</div><div class="rv2">${para(vergiTabani)}</div></div>
     </div>
     <div class="fc">
