@@ -482,6 +482,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <div class="r2"><div class="ig"><label>Toplam Tutar (₽)</label><input type="number" id="s-tutar" placeholder="0" step="0.01"></div><div class="ig" style="max-width:128px;"><label>Alış Tarihi</label><input type="date" id="s-tarih"></div></div>
     <div class="ig"><label>Ödeme Türü</label><select id="s-od" onchange="sOdChange()"><option value="pos">🏦 POS</option><option value="nf">🧾 Nakit Fişli</option><option value="nfs">💵 Nakit Fişsiz</option><option value="bir">👤 Bireysel Hesap</option></select></div>
     <div class="posbox" id="s-posbox">
+      <div class="ig"><label>Platform</label><select id="s-plat"><option value="">— Standart —</option></select></div>
       <div class="ig" style="margin-bottom:5px;max-width:130px;"><label>Komisyon %</label><input type="number" id="s-posoran" step="0.01" oninput="sPosHes()"></div>
       <div class="posres" id="s-posres"></div>
     </div>
@@ -1657,14 +1658,15 @@ function ekleS(){
   const tutar=parseFloat(document.getElementById('s-tutar').value);
   const tarih=document.getElementById('s-tarih').value;
   const od=document.getElementById('s-od').value;
+  const plat=od==='pos'?(document.getElementById('s-plat')?.value||''):'';
   if(!isim||!adet||!tutar||!tarih){alert('Tüm alanları doldurun.');return;}
   D.sea.unshift({id:Date.now(),isim,toplam:adet,kalan:adet,tutar,tarih,od,log:[]});
-  const label=`${isim} – ${adet} seanslık paket`;
+  const label=`${isim} – ${adet} seanslık paket${plat?' · ['+plat+']':''}`;
   if(od==='pos'){
     // tutar = POS'tan çekilen BRÜT tutar. Brüt kasaya girer, komisyon ertesi gün ayrı GİDER olarak POS'tan düşer.
     const oran=parseFloat(document.getElementById('s-posoran').value)||D.par.posOran;
     const kom=+(tutar*oran/100).toFixed(2);
-    D.isl.unshift({id:Date.now()+1,tip:'pos',tutar,tarih,not:label,gkasa:'pos'});
+    D.isl.unshift({id:Date.now()+1,tip:'pos',tutar,tarih,not:label,gkasa:'pos',plat});
     if(kom>0){
       D.isl.unshift({id:Date.now()+2,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos'});
     }
@@ -1749,9 +1751,9 @@ function kullanS(){
   modalSeans.kalan=+(Math.max(0,modalSeans.kalan-dec)).toFixed(2);
   if(!modalSeans.log)modalSeans.log=[];
   modalSeans.log.push({tarih,not,hiz,saat:ssaat,sure:ssure,dusen:dec});
-  // Randevuya ekle
+  // Randevuya ekle — seans zaten şimdi yapıldığı için doğrudan "yapıldı" ve pakete bağlı olarak ekleniyor
   if(rvEkle&&tarih){
-    D.rv.push({id:Date.now(),isim:modalSeans.isim,saat:ssaat,tarih,hiz:hiz||'Masaj',plat:'',sure:ssure,sureLabel:ssure+' dk',fiyat:0,not:'Seans paketi',yapildi:false});
+    D.rv.push({id:Date.now(),isim:modalSeans.isim,saat:ssaat,tarih,hiz:hiz||'Masaj',plat:'',sure:ssure,sureLabel:ssure+' dk',fiyat:0,not:not||'Seans paketi kullanımı',yapildi:true,seansId:modalSeans.id});
     D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
   }
   save();closeSM();renderS();renderBugunRV();if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
@@ -2070,7 +2072,7 @@ function buildSelects(){
     og.innerHTML=D.hiz.map(h=>`<option value="${esc(h.isim)}">${h.isim}</option>`).join('');
   });
   // Platform select'leri
-  ['f-plat','rv-plat'].forEach(id=>{
+  ['f-plat','rv-plat','s-plat'].forEach(id=>{
     const sel=document.getElementById(id);if(!sel)return;
     while(sel.options.length>1)sel.remove(1);
     D.plat.forEach(p=>{const o=document.createElement('option');o.value=p.isim;o.textContent=p.isim;sel.appendChild(o);});
