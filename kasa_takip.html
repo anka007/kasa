@@ -241,6 +241,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <button class="nt" onclick="goP('islemler')" data-perm="kasa_gor">İşlemler</button>
     <button class="nt" onclick="goP('giderler')" data-perm="gider_ekle">Giderler</button>
     <button class="nt" onclick="goP('seanslar')" data-perm="randevu_gor">Seanslar</button>
+    <button class="nt" onclick="goP('musteriler')" data-perm="randevu_gor">Müşteriler</button>
     <button class="nt" onclick="goP('param')" data-perm="param_duzenle">Param.</button>
     <button class="nt" onclick="goP('ozet')" data-perm="rapor_gor">Özet</button>
     <button class="nt" onclick="goP('kullanicilar')" data-perm="kullanici_yonet">👥</button>
@@ -392,7 +393,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <div class="ig"><label>Masaj Türü</label><select id="rv-hiz" onchange="rvFiyatDoldur()"><optgroup label="Masaj" id="rv-og"></optgroup></select></div>
     <div class="r2">
       <div class="ig"><label>Süre (dakika)</label><input type="number" id="rv-sure" placeholder="60" value="60" min="1" onchange="rvCakismaKontrol();rvFiyatDoldur()"></div>
-      <div class="ig"><label>Fiyat (₽)</label><input type="number" id="rv-fiyat" placeholder="0" step="0.01"></div>
+      <div class="ig" id="rv-fiyat-grp"><label>Fiyat (₽)</label><input type="number" id="rv-fiyat" placeholder="0" step="0.01"></div>
     </div>
     <!-- Çakışma uyarısı -->
     <div class="rv-warn" id="rv-warn-box"></div>
@@ -490,6 +491,19 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   </div>
   <div class="shdr"><span class="shdr-lbl">Aktif Paketler</span></div>
   <div id="s-liste"></div>
+</div></div>
+
+<!-- ===== MÜŞTERİLER ===== -->
+<div class="page" id="page-musteriler"><div class="main">
+  <div class="fc">
+    <div class="ftl">Yeni Müşteri</div>
+    <div class="r2"><div class="ig"><label>Ad Soyad</label><input type="text" id="m-isim" placeholder="Ad Soyad"></div><div class="ig"><label>Telefon</label><input type="text" id="m-tel" placeholder="+90 5xx xxx xx xx"></div></div>
+    <div class="ig"><label>Platform / Nereden Geldi</label><select id="m-plat"><option value="">— Seç —</option></select></div>
+    <div class="ig"><label>Not</label><input type="text" id="m-not" placeholder="İsteğe bağlı not"></div>
+    <button class="btnm" onclick="musteriEkle()">Müşteriyi Kaydet →</button>
+  </div>
+  <div class="ig" style="margin:10px 14px;"><input type="text" id="m-ara" placeholder="🔎 İsim veya telefon ara..." oninput="renderMusteriler()"></div>
+  <div id="m-liste"></div>
 </div></div>
 
 <!-- ===== PARAMETRELER ===== -->
@@ -704,7 +718,8 @@ let D = {
     acilis:'09:00', kapanis:'20:00', gunler:[1,2,3,4,5,6]
   }),
   tatiller:      loadStorage('kt3_tat',  []),
-  gelirKaynaklar:loadStorage('kt3_gkay', ['Yurt Dışı Getiri','Eşten Alınan','Dış Kaynak / Diğer'])
+  gelirKaynaklar:loadStorage('kt3_gkay', ['Yurt Dışı Getiri','Eşten Alınan','Dış Kaynak / Diğer']),
+  musteri: loadStorage('kt3_mus', [])
 };
 // Güvenlik: eksik alanları tamamla
 if(!D.calisma) D.calisma={acilis:'09:00',kapanis:'20:00',gunler:[1,2,3,4,5,6]};
@@ -712,6 +727,7 @@ if(!D.calisma.gunler) D.calisma.gunler=[1,2,3,4,5,6];
 if(!D.tatiller) D.tatiller=[];
 if(!D.gelirKaynaklar) D.gelirKaynaklar=['Yurt Dışı Getiri','Eşten Alınan','Dış Kaynak / Diğer'];
 if(!D.gelirKaynaklar.includes('Diğer Gelir')) D.gelirKaynaklar.push('Diğer Gelir');
+if(!D.musteri) D.musteri=[];
 
 function saveLocal(){
   localStorage.setItem('kt3_isl',    JSON.stringify(D.isl));
@@ -725,6 +741,7 @@ function saveLocal(){
   localStorage.setItem('kt3_cal',    JSON.stringify(D.calisma));
   localStorage.setItem('kt3_tat',    JSON.stringify(D.tatiller));
   localStorage.setItem('kt3_gkay',   JSON.stringify(D.gelirKaynaklar));
+  localStorage.setItem('kt3_mus',    JSON.stringify(D.musteri));
 }
 
 function save(){
@@ -803,12 +820,13 @@ function goP(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.nt').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
-  const ts=['ana','randevu','takvim','islemler','giderler','seanslar','param','ozet','kullanicilar','aktar'];
+  const ts=['ana','randevu','takvim','islemler','giderler','seanslar','musteriler','param','ozet','kullanicilar','aktar'];
   const idx=ts.indexOf(p);
   if(idx>=0 && document.querySelectorAll('.nt')[idx]) document.querySelectorAll('.nt')[idx].classList.add('on');
   if(p==='islemler'){initIT();renderTumI();}
   if(p==='giderler'){initGT();renderG();}
   if(p==='seanslar'){renderS();sOdChange();}
+  if(p==='musteriler'){renderMusteriler();}
   if(p==='param'){renderParam();}
   if(p==='randevu'){renderRV();}
   if(p==='takvim'){renderCal();}
@@ -832,6 +850,7 @@ const TUM_IZINLER = {
 const SAYFA_IZIN = {
   ana:'islem_ekle', randevu:'randevu_gor', takvim:'randevu_gor',
   islemler:'kasa_gor', giderler:'gider_ekle', seanslar:'randevu_gor',
+  musteriler:'randevu_gor',
   param:'param_duzenle', ozet:'rapor_gor', kullanicilar:'kullanici_yonet'
 };
 
@@ -906,9 +925,30 @@ function kasaBak(){
   return k;
 }
 
+function kasaDokum(){
+  const d={pos:{g:0,h:0},nak:{g:0,h:0},bir:{g:0,h:0},yurt:{g:0,h:0}};
+  D.isl.forEach(x=>{
+    let gk=x.gkasa;
+    if(!gk){
+      if(x.tip==='pos') gk='pos';
+      else if(x.tip==='nf'||x.tip==='nfs') gk='nak';
+      else if(x.tip==='bir') gk='bir';
+      else if(x.tip==='yurt') gk='yurt';
+      else return;
+    }
+    if(!(gk in d)) return;
+    if(x.tip==='gider') d[gk].h+=x.tutar;
+    else if(x.tip==='virman'){
+      if(x.vHar==='cikis') d[gk].h+=x.tutar;
+      else if(x.vHar==='giris') d[gk].g+=x.tutar;
+    } else d[gk].g+=x.tutar;
+  });
+  return d;
+}
 function renderKasalar(){
   const bug=today();
   const k=kasaBak();
+  const dk=kasaDokum();
   const top=k.pos+k.nak+k.bir+k.yurt;
   let bugK=0, bugH=0;
   D.isl.forEach(x=>{
@@ -922,6 +962,10 @@ function renderKasalar(){
   document.getElementById('k-nak').textContent=para(k.nak);
   document.getElementById('k-bir').textContent=para(k.bir);
   document.getElementById('k-yurt').textContent=para(k.yurt);
+  const posSub=document.querySelector('#k-pos').parentElement.querySelector('.ksub');
+  if(posSub) posSub.textContent=`Gelir ${para(dk.pos.g)} − Gider/Kom. ${para(dk.pos.h)}`;
+  const nakSub=document.querySelector('#k-nak').parentElement.querySelector('.ksub');
+  if(nakSub) nakSub.textContent=`Gelir ${para(dk.nak.g)} − Gider ${para(dk.nak.h)}`;
 }
 
 // ===================== FORM AKIŞI =====================
@@ -1333,6 +1377,8 @@ function mToSaat(m){
 
 function rvFiyatDoldur(){
   rvCakismaKontrol();
+  const paketSel=document.getElementById('rv-paket-sec');
+  if(paketSel&&paketSel.value) return; // paket seçiliyse fiyat doldurulmaz
   const plat=document.getElementById('rv-plat').value;
   const hiz=document.getElementById('rv-hiz').value;
   const sure=parseInt(document.getElementById('rv-sure').value)||60;
@@ -1692,6 +1738,61 @@ function seansRandevu(id){
   document.getElementById('rv-not').value='';
 }
 
+// ===================== MÜŞTERİLER =====================
+function musteriEkle(){
+  const isim=document.getElementById('m-isim').value.trim();
+  const tel=document.getElementById('m-tel').value.trim();
+  const plat=document.getElementById('m-plat').value;
+  const not=document.getElementById('m-not').value.trim();
+  if(!isim){alert('Ad Soyad girin.');return;}
+  D.musteri.unshift({id:Date.now(),isim,tel,plat,not});
+  save();renderMusteriler();
+  document.getElementById('m-isim').value='';
+  document.getElementById('m-tel').value='';
+  document.getElementById('m-plat').value='';
+  document.getElementById('m-not').value='';
+}
+function musteriSil(id){
+  if(!confirm('Bu müşteriyi sil?'))return;
+  D.musteri=D.musteri.filter(x=>x.id!==id);
+  save();renderMusteriler();
+}
+function musteriDuzenle(id){
+  const m=D.musteri.find(x=>x.id===id);if(!m)return;
+  const yeniIsim=prompt('Ad Soyad:',m.isim);
+  if(yeniIsim==null)return;
+  const yeniTel=prompt('Telefon:',m.tel||'');
+  if(yeniTel==null)return;
+  const yeniNot=prompt('Not:',m.not||'');
+  if(yeniNot==null)return;
+  m.isim=yeniIsim.trim()||m.isim;
+  m.tel=yeniTel.trim();
+  m.not=yeniNot.trim();
+  save();renderMusteriler();
+}
+function renderMusteriler(){
+  const el=document.getElementById('m-liste');if(!el)return;
+  const q=(document.getElementById('m-ara')?.value||'').trim().toLowerCase();
+  let l=D.musteri;
+  if(q) l=l.filter(m=>m.isim.toLowerCase().includes(q)||(m.tel||'').toLowerCase().includes(q));
+  if(!l.length){el.innerHTML='<div class="empty">Henüz müşteri kaydı yok.</div>';return;}
+  el.innerHTML=l.map(m=>{
+    const aktifPaket=D.sea.find(s=>s.isim.trim().toLowerCase()===m.isim.trim().toLowerCase()&&s.kalan>0);
+    return `<div class="sc">
+      <div class="sc-hdr"><div>
+        <div class="sisim">${esc(m.isim)}</div>
+        <div class="smeta">${m.tel?'📞 '+esc(m.tel):'Telefon yok'}${m.plat?' · 🏷️ '+esc(m.plat):''}</div>
+        ${m.not?`<div class="smeta">${esc(m.not)}</div>`:''}
+        ${aktifPaket?`<div style="font-size:10px;color:var(--ac2);margin-top:3px;">📦 Aktif paket: ${aktifPaket.kalan}/${aktifPaket.toplam} seans kaldı</div>`:''}
+      </div></div>
+      <div class="sact">
+        <button class="btn-sy" onclick="musteriDuzenle(${m.id})">✏️ Düzenle</button>
+        <button class="btn-sd" onclick="musteriSil(${m.id})">Sil</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderS(){
   buildPaketSelect();
   const el=document.getElementById('s-liste');
@@ -1703,8 +1804,9 @@ function renderS(){
     const pct=Math.round(s.kalan/s.toplam*100);
     const bc=s.kalan===0?'var(--err)':s.kalan<=2?'var(--warn)':'var(--ac2)';
     const kc=s.kalan===0?'d':s.kalan<=2?'w':'ok';
+    const mus=D.musteri.find(m=>m.isim.trim().toLowerCase()===s.isim.trim().toLowerCase());
     return`<div class="sc ${bitti?'sc-done':''}">
-      <div class="sc-hdr"><div><div class="sisim">${s.isim}${bitti?' <span style="font-size:10px;color:var(--err);font-weight:600;">· TAMAMLANDI</span>':''}</div><div class="smeta">${fd(s.tarih)} · ${para(s.tutar)}</div><span class="badge ${s.od}">${OD[s.od]||s.od}</span></div>
+      <div class="sc-hdr"><div><div class="sisim">${s.isim}${bitti?' <span style="font-size:10px;color:var(--err);font-weight:600;">· TAMAMLANDI</span>':''}</div><div class="smeta">${fd(s.tarih)} · ${para(s.tutar)}${mus&&mus.tel?' · 📞 '+esc(mus.tel):''}</div><span class="badge ${s.od}">${OD[s.od]||s.od}</span></div>
       <div class="skl ${kc}">${s.kalan}/${s.toplam}<br><span style="font-size:9px;font-weight:400;">seans</span></div></div>
       <div class="sbar"><div class="sbf" style="width:${pct}%;background:${bc}"></div></div>
       <div class="sinf"><span>${s.toplam-s.kalan} kullanıldı</span><span>${s.kalan} kaldı</span></div>
@@ -2072,7 +2174,7 @@ function buildSelects(){
     og.innerHTML=D.hiz.map(h=>`<option value="${esc(h.isim)}">${h.isim}</option>`).join('');
   });
   // Platform select'leri
-  ['f-plat','rv-plat','s-plat'].forEach(id=>{
+  ['f-plat','rv-plat','s-plat','m-plat'].forEach(id=>{
     const sel=document.getElementById(id);if(!sel)return;
     while(sel.options.length>1)sel.remove(1);
     D.plat.forEach(p=>{const o=document.createElement('option');o.value=p.isim;o.textContent=p.isim;sel.appendChild(o);});
@@ -2100,14 +2202,19 @@ function rvPaketSecDegisti(){
   const sel=document.getElementById('rv-paket-sec');if(!sel)return;
   const id=sel.value;
   const hint=document.getElementById('rv-paket-hint');
+  const fiyatGrp=document.getElementById('rv-fiyat-grp');
+  const fiyatInp=document.getElementById('rv-fiyat');
   if(id){
     const s=D.sea.find(x=>String(x.id)===id);
     if(s){
       document.getElementById('rv-isim').value=s.isim;
       if(hint) hint.style.display='block';
+      if(fiyatInp) fiyatInp.value='';
+      if(fiyatGrp) fiyatGrp.style.display='none';
     }
   } else {
     if(hint) hint.style.display='none';
+    if(fiyatGrp) fiyatGrp.style.display='';
   }
 }
 
@@ -2453,6 +2560,7 @@ async function cloudSaveAll(){
     {id:'cal',  data: D.calisma},
     {id:'tat',  data: D.tatiller},
     {id:'gkay', data: D.gelirKaynaklar},
+    {id:'mus',  data: D.musteri},
   ];
   chunks.forEach(c => {
     const ref = col.doc(ownerUid + '_' + c.id);
@@ -2477,8 +2585,8 @@ async function cloudLoadAll(){
   if(!isFirebaseMode || !db || !currentUser) return;
   showSync('⏬ Yükleniyor...', '#ffd43b');
   const ownerUid = window._ownerUid || currentUser.uid;
-  const keys = ['isl','sea','rv','hiz','plat','akat','alkat','par','cal','tat','gkay'];
-  const fieldMap = {isl:'isl',sea:'sea',rv:'rv',hiz:'hiz',plat:'plat',akat:'akat',alkat:'alkat',par:'par',cal:'calisma',tat:'tatiller',gkay:'gelirKaynaklar'};
+  const keys = ['isl','sea','rv','hiz','plat','akat','alkat','par','cal','tat','gkay','mus'];
+  const fieldMap = {isl:'isl',sea:'sea',rv:'rv',hiz:'hiz',plat:'plat',akat:'akat',alkat:'alkat',par:'par',cal:'calisma',tat:'tatiller',gkay:'gelirKaynaklar',mus:'musteri'};
   try {
     const promises = keys.map(k => db.collection('kasalar').doc(ownerUid+'_'+k).get());
     const docs = await Promise.all(promises);
