@@ -110,6 +110,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-si
 .free-hint{font-size:11px;color:var(--mu);padding:8px 0;line-height:1.7;}
 /* SEANS */
 .sc{background:var(--sf);border:1px solid var(--bd);border-radius:13px;padding:13px;margin-bottom:9px;}
+.sc.sc-done{opacity:.5;}
 .sc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;}
 .sisim{font-weight:600;font-size:13px;}.smeta{font-size:11px;color:var(--mu);margin-top:2px;}
 .sbar{height:5px;background:var(--sf2);border-radius:10px;overflow:hidden;margin-bottom:5px;}
@@ -378,6 +379,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <div class="page" id="page-randevu"><div class="main">
   <div class="fc">
     <div class="ftl">Yeni Randevu</div>
+    <div class="ig"><label>Seans Paketi (varsa)</label><select id="rv-paket-sec" onchange="rvPaketSecDegisti()"><option value="">— Paket Yok (Normal Randevu) —</option></select></div>
+    <div class="hint" id="rv-paket-hint" style="display:none;margin-bottom:9px;">📦 Bu randevu paketten düşülecek — ödeme/fiyat sorulmayacak.</div>
     <div class="r2">
       <div class="ig"><label>Kişi Adı</label><input type="text" id="rv-isim" placeholder="Ad Soyad"></div>
       <div class="ig" style="max-width:95px;"><label>Saat</label><input type="time" id="rv-saat" value="10:00" onchange="rvCakismaKontrol()"></div>
@@ -620,17 +623,21 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <div class="mov h" id="sm-ov">
 <div class="modal">
   <div class="mtl" id="sm-tl">Seans Kullan</div>
-  <div class="ig"><label>Tarih</label><input type="date" id="sm-tarih"></div>
-  <div class="ig"><label>Masaj Türü</label><select id="sm-hiz"><optgroup id="sm-hiz-og" label="Masaj"></optgroup></select></div>
-  <div class="r2">
-    <div class="ig" style="max-width:95px;"><label>Saat</label><input type="time" id="sm-saat" value="10:00"></div>
-    <div class="ig"><label>Süre (dk)</label><input type="number" id="sm-sure" value="60" min="1"></div>
+  <div id="sm-input-area">
+    <div class="ig"><label>Tarih</label><input type="date" id="sm-tarih"></div>
+    <div class="ig"><label>Masaj Türü</label><select id="sm-hiz"><optgroup id="sm-hiz-og" label="Masaj"></optgroup></select></div>
+    <div class="r2">
+      <div class="ig" style="max-width:95px;"><label>Saat</label><input type="time" id="sm-saat" value="10:00"></div>
+      <div class="ig"><label>Süre (dk)</label><input type="number" id="sm-sure" value="60" min="1"></div>
+    </div>
+    <div class="ig"><label>Not</label><input type="text" id="sm-not" placeholder="Ek bilgi..."></div>
+    <div class="ig" style="margin-bottom:4px;">
+      <label><input type="checkbox" id="sm-rv-ekle" checked style="margin-right:5px;">Randevuya da ekle (takvimde görünsün)</label>
+    </div>
+    <div class="mact"><button class="btnm" style="flex:1;" onclick="kullanS()">✓ Seans Kullan</button><button class="btns" onclick="closeSM()">İptal</button></div>
   </div>
-  <div class="ig"><label>Not</label><input type="text" id="sm-not" placeholder="Ek bilgi..."></div>
-  <div class="ig" style="margin-bottom:4px;">
-    <label><input type="checkbox" id="sm-rv-ekle" checked style="margin-right:5px;">Randevuya da ekle (takvimde görünsün)</label>
-  </div>
-  <div class="mact"><button class="btnm" style="flex:1;" onclick="kullanS()">✓ Seans Kullan</button><button class="btns" onclick="closeSM()">İptal</button></div>
+  <div id="sm-done-notice" style="display:none;font-size:12px;color:var(--mu);background:var(--sf2);border-radius:9px;padding:9px 11px;margin-bottom:9px;">✅ Bu paket tamamlandı. Aşağıda hangi tarihte hangi masajların yapıldığını görebilirsin.</div>
+  <div id="sm-close-only" style="display:none;"><button class="btns" style="width:100%;" onclick="closeSM()">Kapat</button></div>
   <div class="divl"></div>
   <div class="ftl" style="margin-bottom:7px;">Geçmiş</div>
   <div id="sm-log"></div>
@@ -702,6 +709,8 @@ let D = {
 if(!D.calisma) D.calisma={acilis:'09:00',kapanis:'20:00',gunler:[1,2,3,4,5,6]};
 if(!D.calisma.gunler) D.calisma.gunler=[1,2,3,4,5,6];
 if(!D.tatiller) D.tatiller=[];
+if(!D.gelirKaynaklar) D.gelirKaynaklar=['Yurt Dışı Getiri','Eşten Alınan','Dış Kaynak / Diğer'];
+if(!D.gelirKaynaklar.includes('Diğer Gelir')) D.gelirKaynaklar.push('Diğer Gelir');
 
 function saveLocal(){
   localStorage.setItem('kt3_isl',    JSON.stringify(D.isl));
@@ -1341,6 +1350,8 @@ function ekleRV(){
   const sure=parseInt(document.getElementById('rv-sure').value)||60;
   const fiyat=parseFloat(document.getElementById('rv-fiyat').value)||0;
   const not=document.getElementById('rv-not').value.trim();
+  const paketSel=document.getElementById('rv-paket-sec');
+  const paketId=paketSel?paketSel.value:'';
   if(!isim||!saat||!tarih||!hiz){alert('Zorunlu alanları doldurun.');return;}
   // Tatil kontrolü
   if(isTatil(tarih)){
@@ -1352,6 +1363,19 @@ function ekleRV(){
   if(!isCalismaGunu(tarih)){
     document.getElementById('rv-warn-box').textContent=`🚫 ${fd(tarih)} günü çalışmıyorsunuz.`;
     document.getElementById('rv-warn-box').classList.add('on'); return;
+  }
+
+  // Seansı bitmiş kişi kontrolü — paket seçilmediyse ve isim bitmiş bir pakete tam eşleşiyorsa engelle
+  if(!paketId){
+    const isimAlt=isim.toLowerCase();
+    const aktifPaket=D.sea.find(s=>s.isim.trim().toLowerCase()===isimAlt&&s.kalan>0);
+    const bitmisPaket=D.sea.find(s=>s.isim.trim().toLowerCase()===isimAlt&&s.kalan<=0);
+    if(bitmisPaket&&!aktifPaket){
+      const warnEl=document.getElementById('rv-warn-box');
+      warnEl.textContent=`🚫 ${bitmisPaket.isim} adlı kişinin seans paketi tamamlandı. Yeni randevu için önce Seanslar sayfasından yeni paket açın.`;
+      warnEl.classList.add('on');
+      return;
+    }
   }
 
   // Çakışma kontrolü — çakışırsa KESİNLİKLE engelle
@@ -1371,17 +1395,26 @@ function ekleRV(){
   }
 
   D.rv.unshift({id:Date.now(),isim,saat,tarih,hiz,plat,sure,sureLabel:sure+' dk',fiyat,not,yapildi:false,seansId:null});
-  // Link to seans if came from seans card
-  if(window._seansIdForRV){
+  // Link to seans: dropdown seçimi öncelikli, yoksa seans kartından gelen eski yöntem
+  if(paketId){
+    const s=D.sea.find(x=>String(x.id)===paketId&&x.kalan>0);
+    if(s){
+      D.rv[0].seansId=s.id;
+      D.rv[0].fiyat=0;
+      if(!not) D.rv[0].not='Seans paketi kullanımı';
+    }
+  } else if(window._seansIdForRV){
     D.rv[0].seansId=window._seansIdForRV;
     window._seansIdForRV=null;
   }
   D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
   save();renderRV();renderBugunRV();renderCal();
-  document.getElementById('rv-isim').value='';document.getElementById('rv-not').value='';
+  document.getElementById('rv-not').value='';
   document.getElementById('rv-fiyat').value='';
   document.getElementById('rv-warn-box').classList.remove('on');
   document.getElementById('rv-slots-box').classList.remove('on');
+  // Paket seçiliyse isim ve seçim kalsın (aynı kişiye başka tarihler eklenebilsin); değilse isim alanını temizle
+  if(!paketId){ document.getElementById('rv-isim').value=''; }
 }
 
 function renderRV(){
@@ -1393,7 +1426,8 @@ function renderRV(){
     return`<div style="font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;padding:6px 0 4px;">${fd(t)}${isTod?'<span class="tchip">Bugün</span>':''}</div>`
       +g[t].map(r=>`<div class="rv-card ${r.yapildi?'rv-done':''}">
         <div class="rv-hdr"><div><div class="rv-isim">${r.isim}</div><div class="rv-det">${r.hiz}${r.plat?' · '+r.plat:''} · ${r.sure} dk</div></div><div class="rv-saat">${r.saat}</div></div>
-        ${r.fiyat?`<div class="rv-fiyat">${para(r.fiyat)}</div>`:''}
+        ${r.seansId?'<div style="font-size:10px;color:var(--ac2);margin-top:2px;">📦 Seans paketinden</div>':''}
+        ${r.fiyat&&!r.seansId?`<div class="rv-fiyat">${para(r.fiyat)}</div>`:''}
         <div class="rv-act">${!r.yapildi?`<button class="btn-ry" onclick="openRVM(${r.id})">✓ Yapıldı</button>`:'<span style="font-size:11px;color:var(--mu);">✓ Tamamlandı</span>'}
         <button class="btn-rd" onclick="silRV(${r.id})">Sil</button></div>
       </div>`).join('');
@@ -1648,31 +1682,35 @@ function seansRandevu(id){
   // Seans sahibini randevu formuna yönlendir
   const s=D.sea.find(x=>x.id===id);if(!s)return;
   goP('randevu');
+  buildPaketSelect();
+  const sel=document.getElementById('rv-paket-sec');
+  if(sel){ sel.value=String(id); rvPaketSecDegisti(); }
   document.getElementById('rv-isim').value=s.isim;
   // Hizmet boş kalır, kullanıcı seçer
-  // Seans ID'sini randevuya bağla için hidden field
-  document.getElementById('rv-not').value='Seans paketi ('+(s.toplam-s.kalan+1)+'. seans)';
-  // Store seans id for linking
-  window._seansIdForRV=id;
+  document.getElementById('rv-not').value='';
 }
 
 function renderS(){
+  buildPaketSelect();
   const el=document.getElementById('s-liste');
   const OD={pos:'🏦 POS',nf:'🧾 Nakit Fişli',nfs:'💵 Nakit Fişsiz',bir:'👤 Bireysel'};
   const l=[...D.sea.filter(s=>s.kalan>0),...D.sea.filter(s=>s.kalan<=0)];
   if(!l.length){el.innerHTML='<div class="empty">Henüz paket yok.</div>';return;}
   el.innerHTML=l.map(s=>{
+    const bitti=s.kalan<=0;
     const pct=Math.round(s.kalan/s.toplam*100);
     const bc=s.kalan===0?'var(--err)':s.kalan<=2?'var(--warn)':'var(--ac2)';
     const kc=s.kalan===0?'d':s.kalan<=2?'w':'ok';
-    return`<div class="sc">
-      <div class="sc-hdr"><div><div class="sisim">${s.isim}</div><div class="smeta">${fd(s.tarih)} · ${para(s.tutar)}</div><span class="badge ${s.od}">${OD[s.od]||s.od}</span></div>
+    return`<div class="sc ${bitti?'sc-done':''}">
+      <div class="sc-hdr"><div><div class="sisim">${s.isim}${bitti?' <span style="font-size:10px;color:var(--err);font-weight:600;">· TAMAMLANDI</span>':''}</div><div class="smeta">${fd(s.tarih)} · ${para(s.tutar)}</div><span class="badge ${s.od}">${OD[s.od]||s.od}</span></div>
       <div class="skl ${kc}">${s.kalan}/${s.toplam}<br><span style="font-size:9px;font-weight:400;">seans</span></div></div>
       <div class="sbar"><div class="sbf" style="width:${pct}%;background:${bc}"></div></div>
       <div class="sinf"><span>${s.toplam-s.kalan} kullanıldı</span><span>${s.kalan} kaldı</span></div>
       <div class="sact">
-        <button class="btn-sy" ${s.kalan<=0?'disabled':''} onclick="openSM(${s.id})">✓ Seans Yaptı</button>
-        <button class="btn-sy" style="background:var(--sf2);color:var(--ac);border:1px solid var(--ac);" onclick="seansRandevu(${s.id})">📅 Randevu</button>
+        ${bitti
+          ? `<button class="btn-sy" style="background:var(--sf2);color:var(--mu);border:1px solid var(--bd);" onclick="openSM(${s.id})">📋 Geçmişi Gör</button>`
+          : `<button class="btn-sy" onclick="openSM(${s.id})">✓ Seans Yaptı</button>
+             <button class="btn-sy" style="background:var(--sf2);color:var(--ac);border:1px solid var(--ac);" onclick="seansRandevu(${s.id})">📅 Randevu</button>`}
         <button class="btn-sd" onclick="silS(${s.id})">Sil</button>
       </div>
     </div>`;
@@ -1680,7 +1718,11 @@ function renderS(){
 }
 function openSM(id){
   modalSeans=D.sea.find(s=>s.id===id);if(!modalSeans)return;
-  document.getElementById('sm-tl').textContent=`${modalSeans.isim} – Seans`;
+  const bitti=modalSeans.kalan<=0;
+  document.getElementById('sm-tl').textContent=`${modalSeans.isim} – Seans${bitti?' (Tamamlandı)':''}`;
+  document.getElementById('sm-input-area').style.display=bitti?'none':'block';
+  document.getElementById('sm-done-notice').style.display=bitti?'block':'none';
+  document.getElementById('sm-close-only').style.display=bitti?'block':'none';
   document.getElementById('sm-tarih').value=today();
   document.getElementById('sm-not').value='';
   // Hizmet listesi güncelle
@@ -1936,12 +1978,12 @@ function platFGun(pi,hiz,sure,val){
   if(!D.plat[pi].fiyatlar)D.plat[pi].fiyatlar={};
   D.plat[pi].fiyatlar[hiz+'|'+sure]=parseFloat(val)||0;save();
 }
-function hizEkle(){const v=document.getElementById('p-yeni-hiz').value.trim();if(!v)return;if(!D.hiz.find(h=>h.isim===v))D.hiz.push({isim:v});save();renderParam();document.getElementById('p-yeni-hiz').value='';}
-function hizSil(i){if(!confirm('Sil?'))return;D.hiz.splice(i,1);save();renderParam();}
+function hizEkle(){const v=document.getElementById('p-yeni-hiz').value.trim();if(!v)return;if(!D.hiz.find(h=>h.isim===v))D.hiz.push({isim:v});save();renderParam();buildSelects();document.getElementById('p-yeni-hiz').value='';}
+function hizSil(i){if(!confirm('Sil?'))return;D.hiz.splice(i,1);save();renderParam();buildSelects();}
 function hizTasi(i,yon){
   const j=i+yon;if(j<0||j>=D.hiz.length)return;
   [D.hiz[i],D.hiz[j]]=[D.hiz[j],D.hiz[i]];
-  save();renderParam();
+  save();renderParam();buildSelects();
 }
 function hizDuzenle(i){
   const eski=D.hiz[i].isim;
@@ -1961,14 +2003,14 @@ function hizDuzenle(i){
     }
   });
   D.hiz[i].isim=y;
-  save();renderParam();
+  save();renderParam();buildSelects();
 }
 function platEkle(){const v=document.getElementById('p-yeni-plat').value.trim();if(!v)return;if(!D.plat.find(p=>p.isim===v))D.plat.push({isim:v,fiyatlar:{}});save();renderParam();document.getElementById('p-yeni-plat').value='';}
 function platSil(i){if(!confirm('Sil?'))return;D.plat.splice(i,1);save();renderParam();buildSelects();}
 function platTasi(i,yon){
   const j=i+yon;if(j<0||j>=D.plat.length)return;
   [D.plat[i],D.plat[j]]=[D.plat[j],D.plat[i]];
-  save();renderParam();
+  save();renderParam();buildSelects();
 }
 function platDuzenle(i){
   const eski=D.plat[i].isim;
@@ -1981,11 +2023,11 @@ function platDuzenle(i){
   save();renderParam();buildSelects();
 }
 function acatEkle(){const v=document.getElementById('p-yeni-acat').value.trim();if(!v)return;if(!D.akat.includes(v)){D.akat.push(v);if(!D.alkat[v])D.alkat[v]=[];}save();renderAcatTags();buildSelects();document.getElementById('p-yeni-acat').value='';}
-function acatSil(k){if(!confirm(`"${k}" sil?`))return;D.akat=D.akat.filter(x=>x!==k);save();renderAcatTags();}
+function acatSil(k){if(!confirm(`"${k}" sil?`))return;D.akat=D.akat.filter(x=>x!==k);save();renderAcatTags();buildSelects();}
 function acatTasi(i,yon){
   const j=i+yon;if(j<0||j>=D.akat.length)return;
   [D.akat[i],D.akat[j]]=[D.akat[j],D.akat[i]];
-  save();renderAcatTags();
+  save();renderAcatTags();buildSelects();
 }
 function acatDuzenle(k,i){
   const yeni=prompt('Ana kategori adını düzenle:',k);
@@ -2040,6 +2082,31 @@ function buildSelects(){
   }
   // Gelir kaynağı select
   buildGkaySelect();
+  // Randevu formundaki aktif seans paketleri select'i
+  buildPaketSelect();
+}
+
+function buildPaketSelect(){
+  const sel=document.getElementById('rv-paket-sec');if(!sel)return;
+  const cur=sel.value;
+  const aktifler=D.sea.filter(s=>s.kalan>0);
+  sel.innerHTML='<option value="">— Paket Yok (Normal Randevu) —</option>'
+    +aktifler.map(s=>`<option value="${s.id}">${esc(s.isim)} (${s.kalan}/${s.toplam} kaldı)</option>`).join('');
+  if(aktifler.some(s=>String(s.id)===cur)) sel.value=cur;
+}
+function rvPaketSecDegisti(){
+  const sel=document.getElementById('rv-paket-sec');if(!sel)return;
+  const id=sel.value;
+  const hint=document.getElementById('rv-paket-hint');
+  if(id){
+    const s=D.sea.find(x=>String(x.id)===id);
+    if(s){
+      document.getElementById('rv-isim').value=s.isim;
+      if(hint) hint.style.display='block';
+    }
+  } else {
+    if(hint) hint.style.display='none';
+  }
 }
 
 // ===================== ÖZET =====================
@@ -2383,6 +2450,7 @@ async function cloudSaveAll(){
     {id:'par',  data: D.par},
     {id:'cal',  data: D.calisma},
     {id:'tat',  data: D.tatiller},
+    {id:'gkay', data: D.gelirKaynaklar},
   ];
   chunks.forEach(c => {
     const ref = col.doc(ownerUid + '_' + c.id);
@@ -2407,8 +2475,8 @@ async function cloudLoadAll(){
   if(!isFirebaseMode || !db || !currentUser) return;
   showSync('⏬ Yükleniyor...', '#ffd43b');
   const ownerUid = window._ownerUid || currentUser.uid;
-  const keys = ['isl','sea','rv','hiz','plat','akat','alkat','par','cal','tat'];
-  const fieldMap = {isl:'isl',sea:'sea',rv:'rv',hiz:'hiz',plat:'plat',akat:'akat',alkat:'alkat',par:'par',cal:'calisma',tat:'tatiller'};
+  const keys = ['isl','sea','rv','hiz','plat','akat','alkat','par','cal','tat','gkay'];
+  const fieldMap = {isl:'isl',sea:'sea',rv:'rv',hiz:'hiz',plat:'plat',akat:'akat',alkat:'alkat',par:'par',cal:'calisma',tat:'tatiller',gkay:'gelirKaynaklar'};
   try {
     const promises = keys.map(k => db.collection('kasalar').doc(ownerUid+'_'+k).get());
     const docs = await Promise.all(promises);
