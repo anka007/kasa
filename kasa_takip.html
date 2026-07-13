@@ -58,6 +58,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-si
 .btnm{background:var(--ac);color:#fff;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;width:100%;}
 .btnm:hover{opacity:.85;}
 .btns{background:var(--sf2);color:var(--tx);border:1px solid var(--bd);border-radius:9px;padding:7px 12px;font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;font-weight:500;}
+.btns.on{background:var(--ac);border-color:var(--ac);color:#fff;}
 .btns:hover{border-color:var(--ac);color:var(--ac);}.btns.p{background:var(--ac);color:#fff;border-color:var(--ac);}
 .ilist{display:flex;flex-direction:column;gap:7px;}
 .ii{background:var(--sf);border:1px solid var(--bd);border-radius:11px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:7px;}
@@ -235,15 +236,15 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <nav class="nav">
   <div class="logo">Kasa<span>.</span></div>
   <div class="ntabs">
-    <button class="nt on"  onclick="goP('ana')" data-perm="islem_ekle">Ana</button>
-    <button class="nt" onclick="goP('randevu')" data-perm="randevu_gor">Randevu</button>
-    <button class="nt" onclick="goP('takvim')" data-perm="randevu_gor">Takvim</button>
-    <button class="nt" onclick="goP('islemler')" data-perm="kasa_gor">İşlemler</button>
-    <button class="nt" onclick="goP('giderler')" data-perm="gider_ekle">Giderler</button>
-    <button class="nt" onclick="goP('seanslar')" data-perm="randevu_gor">Seanslar</button>
-    <button class="nt" onclick="goP('musteriler')" data-perm="randevu_gor">Müşteriler</button>
-    <button class="nt" onclick="goP('param')" data-perm="param_duzenle">Param.</button>
-    <button class="nt" onclick="goP('ozet')" data-perm="rapor_gor">Özet</button>
+    <button class="nt on"  onclick="goP('ana')" data-perm="islem_ekle" data-i18n="nav_ana">Ana</button>
+    <button class="nt" onclick="goP('randevu')" data-perm="randevu_gor" data-i18n="nav_randevu">Randevu</button>
+    <button class="nt" onclick="goP('takvim')" data-perm="randevu_gor" data-i18n="nav_takvim">Takvim</button>
+    <button class="nt" onclick="goP('islemler')" data-perm="kasa_gor" data-i18n="nav_islemler">İşlemler</button>
+    <button class="nt" onclick="goP('giderler')" data-perm="gider_ekle" data-i18n="nav_giderler">Giderler</button>
+    <button class="nt" onclick="goP('seanslar')" data-perm="randevu_gor" data-i18n="nav_seanslar">Seanslar</button>
+    <button class="nt" onclick="goP('musteriler')" data-perm="randevu_gor" data-i18n="nav_musteriler">Müşteriler</button>
+    <button class="nt" onclick="goP('param')" data-perm="param_duzenle" data-i18n="nav_param">Param.</button>
+    <button class="nt" onclick="goP('ozet')" data-perm="rapor_gor" data-i18n="nav_ozet">Özet</button>
     <button class="nt" onclick="goP('kullanicilar')" data-perm="kullanici_yonet">👥</button>
     <button class="nt" onclick="goP('aktar')">📥</button>
   </div>
@@ -262,7 +263,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   <div id="bugun-rv-wrap"></div>
 
   <div class="fc">
-    <div class="ftl">Yeni İşlem</div>
+    <div class="ftl" data-i18n="ftl_yeni_islem">Yeni İşlem</div>
 
     <!-- Adım 1 -->
     <div class="step on" id="st1">
@@ -277,15 +278,15 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 
     <!-- Masaj adımları -->
     <div class="step" id="st-plat">
-      <div class="ig"><label>Platform</label><select id="f-plat" onchange="platHizDeg()"><option value="">— Standart —</option></select></div>
+      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="f-plat" onchange="platHizDeg()"><option value="">— Standart —</option></select></div>
     </div>
     <div class="step" id="st-hiz">
-      <div class="ig"><label>Masaj Türü</label><select id="f-hiz" onchange="platHizDeg()"><optgroup label="Masaj Türleri" id="f-hiz-og"></optgroup></select></div>
+      <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="f-hiz" onchange="platHizDeg()"><optgroup label="Masaj Türleri" id="f-hiz-og"></optgroup></select></div>
     </div>
     <div class="step" id="st-sure">
       <div class="r2">
-        <div class="ig"><label>Süre (dakika)</label><input type="number" id="f-sure" placeholder="60" min="1" oninput="platHizDeg()"></div>
-        <div class="ig"><label>Kişi Adı (isteğe bağlı)</label><input type="text" id="f-kisi" placeholder="Müşteri adı"></div>
+        <div class="ig"><label data-i18n="sure_dakika">Süre (dakika)</label><input type="number" id="f-sure" placeholder="60" min="1" oninput="platHizDeg()"></div>
+        <div class="ig"><label data-i18n="kisi_adi_ist">Kişi Adı (isteğe bağlı)</label><input type="text" id="f-kisi" placeholder="Müşteri adı"></div>
       </div>
     </div>
     <div class="step" id="st-odeme">
@@ -298,13 +299,13 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
       </div>
     </div>
     <div class="posbox" id="f-posbox">
-      <div class="ig" style="margin-bottom:5px;max-width:130px;"><label>Komisyon %</label><input type="number" id="f-posoran" step="0.01" oninput="posHes()"></div>
+      <div class="ig" style="margin-bottom:5px;max-width:130px;"><label data-i18n="komisyon_pct">Komisyon %</label><input type="number" id="f-posoran" step="0.01" oninput="posHes()"></div>
       <div class="posres" id="f-posres"></div>
     </div>
 
     <!-- Gider adımları -->
     <div class="step" id="st-acat">
-      <div class="ig"><label>Ana Kategori</label>
+      <div class="ig"><label data-i18n="ana_kategori">Ana Kategori</label>
         <select id="f-acat" onchange="acatDeg()"><option value="">— Seç —</option></select>
       </div>
     </div>
@@ -331,7 +332,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
       <div class="virbox">
         <div class="slbl" style="margin-bottom:8px;">Virman — Hesap Transferi</div>
         <div class="r2">
-          <div class="ig"><label>Kaynak Hesap</label>
+          <div class="ig"><label data-i18n="kaynak_hesap">Kaynak Hesap</label>
             <select id="v-kaynak" onchange="virmanKaynakDeg()">
               <option value="pos">🏦 POS (Şirket)</option>
               <option value="nak">💰 Nakit</option>
@@ -339,7 +340,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
               <option value="yurt">🌍 Diğer Gelir</option>
             </select>
           </div>
-          <div class="ig"><label>Hedef Hesap</label>
+          <div class="ig"><label data-i18n="hedef_hesap">Hedef Hesap</label>
             <select id="v-hedef">
               <option value="nak">💰 Nakit</option>
               <option value="bir">👤 Bireysel</option>
@@ -351,13 +352,13 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
       </div>
       <div id="v-bak-info" style="font-size:11px;color:var(--mu);margin-top:4px;padding:6px 0;"></div>
       <div id="v-warn" style="display:none;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);border-radius:8px;padding:8px;font-size:12px;color:var(--err);margin-top:6px;"></div>
-      <button class="btns" style="margin-top:7px;width:100%;" onclick="virmanTamami()">Tümünü Virman Et →</button>
+      <button class="btns" style="margin-top:7px;width:100%;" onclick="virmanTamami()" data-i18n="btn_virman_tumu">Tümünü Virman Et →</button>
     </div>
 
     <!-- Tutar + Tarih -->
     <!-- Diğer Gelir kaynağı -->
     <div class="step" id="st-yurt-kaynak">
-      <div class="ig"><label>Gelir Kaynağı</label>
+      <div class="ig"><label data-i18n="gelir_kaynagi">Gelir Kaynağı</label>
         <select id="f-yurt-kat">
         </select>
       </div>
@@ -365,10 +366,10 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <div class="step" id="st-tutar">
       <div class="r2">
         <div class="ig"><label id="f-tlbl">Tutar (₽)</label><input type="number" id="f-tutar" placeholder="0" step="0.01"></div>
-        <div class="ig" style="max-width:128px;"><label>Tarih</label><input type="date" id="f-tarih"></div>
+        <div class="ig" style="max-width:128px;"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="f-tarih"></div>
       </div>
-      <div class="ig"><label>Not (isteğe bağlı)</label><textarea id="f-not" placeholder="Ek bilgi..."></textarea></div>
-      <button class="btnm" onclick="ekleI()">Ekle →</button>
+      <div class="ig"><label data-i18n="not_ist">Not (isteğe bağlı)</label><textarea id="f-not" placeholder="Ek bilgi..."></textarea></div>
+      <button class="btnm" onclick="ekleI()" data-i18n="btn_ekle_ok">Ekle →</button>
     </div>
   </div>
 
@@ -379,28 +380,28 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== RANDEVU ===== -->
 <div class="page" id="page-randevu"><div class="main">
   <div class="fc">
-    <div class="ftl">Yeni Randevu</div>
-    <div class="ig"><label>Seans Paketi (varsa)</label><select id="rv-paket-sec" onchange="rvPaketSecDegisti()"><option value="">— Paket Yok (Normal Randevu) —</option></select></div>
+    <div class="ftl" data-i18n="ftl_yeni_randevu">Yeni Randevu</div>
+    <div class="ig"><label data-i18n="seans_paketi_varsa">Seans Paketi (varsa)</label><select id="rv-paket-sec" onchange="rvPaketSecDegisti()"><option value="">— Paket Yok (Normal Randevu) —</option></select></div>
     <div class="hint" id="rv-paket-hint" style="display:none;margin-bottom:9px;">📦 Bu randevu paketten düşülecek — ödeme/fiyat sorulmayacak.</div>
     <div class="r2">
-      <div class="ig"><label>Kişi Adı</label><input type="text" id="rv-isim" placeholder="Ad Soyad"></div>
-      <div class="ig" style="max-width:95px;"><label>Saat</label><input type="time" id="rv-saat" value="10:00" onchange="rvCakismaKontrol()"></div>
+      <div class="ig"><label data-i18n="kisi_adi">Kişi Adı</label><input type="text" id="rv-isim" placeholder="Ad Soyad"></div>
+      <div class="ig" style="max-width:95px;"><label data-i18n="saat_lbl">Saat</label><input type="time" id="rv-saat" value="10:00" onchange="rvCakismaKontrol()"></div>
     </div>
     <div class="r2">
-      <div class="ig" style="max-width:130px;"><label>Tarih</label><input type="date" id="rv-tarih" onchange="rvCakismaKontrol()"></div>
-      <div class="ig"><label>Platform</label><select id="rv-plat" onchange="rvFiyatDoldur()"><option value="">— Standart —</option></select></div>
+      <div class="ig" style="max-width:130px;"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="rv-tarih" onchange="rvCakismaKontrol()"></div>
+      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="rv-plat" onchange="rvFiyatDoldur()"><option value="">— Standart —</option></select></div>
     </div>
-    <div class="ig"><label>Masaj Türü</label><select id="rv-hiz" onchange="rvFiyatDoldur()"><optgroup label="Masaj" id="rv-og"></optgroup></select></div>
+    <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="rv-hiz" onchange="rvFiyatDoldur()"><optgroup label="Masaj" id="rv-og"></optgroup></select></div>
     <div class="r2">
-      <div class="ig"><label>Süre (dakika)</label><input type="number" id="rv-sure" placeholder="60" value="60" min="1" onchange="rvCakismaKontrol();rvFiyatDoldur()"></div>
-      <div class="ig" id="rv-fiyat-grp"><label>Fiyat (₽)</label><input type="number" id="rv-fiyat" placeholder="0" step="0.01"></div>
+      <div class="ig"><label data-i18n="sure_dakika">Süre (dakika)</label><input type="number" id="rv-sure" placeholder="60" value="60" min="1" onchange="rvCakismaKontrol();rvFiyatDoldur()"></div>
+      <div class="ig" id="rv-fiyat-grp"><label data-i18n="fiyat_rub">Fiyat (₽)</label><input type="number" id="rv-fiyat" placeholder="0" step="0.01"></div>
     </div>
     <!-- Çakışma uyarısı -->
     <div class="rv-warn" id="rv-warn-box"></div>
     <!-- Boş saatler -->
     <div class="rv-slots" id="rv-slots-box"></div>
-    <div class="ig"><label>Not</label><input type="text" id="rv-not" placeholder="Ek bilgi..."></div>
-    <button class="btnm" onclick="ekleRV()">Randevu Kaydet →</button>
+    <div class="ig"><label data-i18n="not_lbl">Not</label><input type="text" id="rv-not" placeholder="Ek bilgi..."></div>
+    <button class="btnm" onclick="ekleRV()" data-i18n="btn_randevu_kaydet">Randevu Kaydet →</button>
   </div>
   <div class="shdr"><span class="shdr-lbl">Tüm Randevular</span></div>
   <div id="rv-liste"></div>
@@ -422,7 +423,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--ac);margin-right:4px;"></span>Bugün</span>
   </div>
   <div class="fc">
-    <div class="ftl" id="cal-det-lbl">Gün Detayı</div>
+    <div class="ftl" id="cal-det-lbl" data-i18n="ftl_gun_detay">Gün Detayı</div>
     <div id="cal-det"></div>
   </div>
 </div></div>
@@ -430,16 +431,16 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== İŞLEMLER ===== -->
 <div class="page" id="page-islemler"><div class="main">
   <div class="fc" style="padding:12px 14px;">
-    <div class="ftl" style="margin-bottom:7px;">Tarih Filtresi</div>
+    <div class="ftl" style="margin-bottom:7px;" data-i18n="ftl_tarih_filtre">Tarih Filtresi</div>
     <div class="r2" style="margin-bottom:7px;">
-      <div class="ig" style="margin-bottom:0;"><label>Başlangıç</label><input type="date" id="i-bas" onchange="renderTumI()"></div>
-      <div class="ig" style="margin-bottom:0;"><label>Bitiş</label><input type="date" id="i-bit" onchange="renderTumI()"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="baslangic">Başlangıç</label><input type="date" id="i-bas" onchange="renderTumI()"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="bitis">Bitiş</label><input type="date" id="i-bit" onchange="renderTumI()"></div>
     </div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;">
-      <button class="btns" onclick="iPer('bugun')">Bugün</button>
-      <button class="btns" onclick="iPer('hafta')">Bu Hafta</button>
-      <button class="btns" onclick="iPer('ay')">Bu Ay</button>
-      <button class="btns" onclick="iPer('tumu')">Tümü</button>
+      <button class="btns" onclick="iPer('bugun')" data-i18n="btn_bugun">Bugün</button>
+      <button class="btns" onclick="iPer('hafta')" data-i18n="btn_bu_hafta">Bu Hafta</button>
+      <button class="btns" onclick="iPer('ay')" data-i18n="btn_bu_ay">Bu Ay</button>
+      <button class="btns" onclick="iPer('tumu')" data-i18n="btn_tumu">Tümü</button>
     </div>
   </div>
   <div class="chips">
@@ -458,16 +459,16 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== GİDERLER ===== -->
 <div class="page" id="page-giderler"><div class="main">
   <div class="fc" style="padding:12px 14px;">
-    <div class="ftl" style="margin-bottom:7px;">Tarih Filtresi</div>
+    <div class="ftl" style="margin-bottom:7px;" data-i18n="ftl_tarih_filtre">Tarih Filtresi</div>
     <div class="r2" style="margin-bottom:7px;">
-      <div class="ig" style="margin-bottom:0;"><label>Başlangıç</label><input type="date" id="g-bas" onchange="renderG()"></div>
-      <div class="ig" style="margin-bottom:0;"><label>Bitiş</label><input type="date" id="g-bit" onchange="renderG()"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="baslangic">Başlangıç</label><input type="date" id="g-bas" onchange="renderG()"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="bitis">Bitiş</label><input type="date" id="g-bit" onchange="renderG()"></div>
     </div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;">
-      <button class="btns" onclick="gPer('bugun')">Bugün</button>
-      <button class="btns" onclick="gPer('hafta')">Bu Hafta</button>
-      <button class="btns" onclick="gPer('ay')">Bu Ay</button>
-      <button class="btns" onclick="gPer('tumu')">Tümü</button>
+      <button class="btns" onclick="gPer('bugun')" data-i18n="btn_bugun">Bugün</button>
+      <button class="btns" onclick="gPer('hafta')" data-i18n="btn_bu_hafta">Bu Hafta</button>
+      <button class="btns" onclick="gPer('ay')" data-i18n="btn_bu_ay">Bu Ay</button>
+      <button class="btns" onclick="gPer('tumu')" data-i18n="btn_tumu">Tümü</button>
     </div>
   </div>
   <div class="gtop"><div class="klbl">Toplam Gider</div><div class="gtamt" id="g-tot">₽0,00</div><div class="gtsub" id="g-sub">0 işlem</div></div>
@@ -478,16 +479,16 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== SEANSLAR ===== -->
 <div class="page" id="page-seanslar"><div class="main">
   <div class="fc">
-    <div class="ftl">Yeni Seans Paketi</div>
-    <div class="r2"><div class="ig"><label>Kişi Adı</label><input type="text" id="s-isim" placeholder="Ad Soyad"></div><div class="ig" style="max-width:85px;"><label>Seans</label><input type="number" id="s-adet" value="8" min="1"></div></div>
-    <div class="r2"><div class="ig"><label>Toplam Tutar (₽)</label><input type="number" id="s-tutar" placeholder="0" step="0.01"></div><div class="ig" style="max-width:128px;"><label>Alış Tarihi</label><input type="date" id="s-tarih"></div></div>
-    <div class="ig"><label>Ödeme Türü</label><select id="s-od" onchange="sOdChange()"><option value="pos">🏦 POS</option><option value="nf">🧾 Nakit Fişli</option><option value="nfs">💵 Nakit Fişsiz</option><option value="bir">👤 Bireysel Hesap</option></select></div>
+    <div class="ftl" data-i18n="ftl_yeni_seans">Yeni Seans Paketi</div>
+    <div class="r2"><div class="ig"><label data-i18n="kisi_adi">Kişi Adı</label><input type="text" id="s-isim" placeholder="Ad Soyad"></div><div class="ig" style="max-width:85px;"><label data-i18n="seans_lbl">Seans</label><input type="number" id="s-adet" value="8" min="1"></div></div>
+    <div class="r2"><div class="ig"><label data-i18n="toplam_tutar">Toplam Tutar (₽)</label><input type="number" id="s-tutar" placeholder="0" step="0.01"></div><div class="ig" style="max-width:128px;"><label data-i18n="alis_tarihi">Alış Tarihi</label><input type="date" id="s-tarih"></div></div>
+    <div class="ig"><label data-i18n="odeme_turu">Ödeme Türü</label><select id="s-od" onchange="sOdChange()"><option value="pos">🏦 POS</option><option value="nf">🧾 Nakit Fişli</option><option value="nfs">💵 Nakit Fişsiz</option><option value="bir">👤 Bireysel Hesap</option></select></div>
     <div class="posbox" id="s-posbox">
-      <div class="ig"><label>Platform</label><select id="s-plat"><option value="">— Standart —</option></select></div>
-      <div class="ig" style="margin-bottom:5px;max-width:130px;"><label>Komisyon %</label><input type="number" id="s-posoran" step="0.01" oninput="sPosHes()"></div>
+      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="s-plat"><option value="">— Standart —</option></select></div>
+      <div class="ig" style="margin-bottom:5px;max-width:130px;"><label data-i18n="komisyon_pct">Komisyon %</label><input type="number" id="s-posoran" step="0.01" oninput="sPosHes()"></div>
       <div class="posres" id="s-posres"></div>
     </div>
-    <button class="btnm" onclick="ekleS()">Paketi Kaydet →</button>
+    <button class="btnm" onclick="ekleS()" data-i18n="btn_paket_kaydet">Paketi Kaydet →</button>
   </div>
   <div class="shdr"><span class="shdr-lbl">Aktif Paketler</span></div>
   <div id="s-liste"></div>
@@ -496,11 +497,11 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== MÜŞTERİLER ===== -->
 <div class="page" id="page-musteriler"><div class="main">
   <div class="fc">
-    <div class="ftl">Yeni Müşteri</div>
-    <div class="r2"><div class="ig"><label>Ad Soyad</label><input type="text" id="m-isim" placeholder="Ad Soyad"></div><div class="ig"><label>Telefon</label><input type="text" id="m-tel" placeholder="+_ _ ülke koduyla telefon"></div></div>
-    <div class="ig"><label>Platform / Nereden Geldi</label><select id="m-plat"><option value="">— Seç —</option></select></div>
-    <div class="ig"><label>Not</label><input type="text" id="m-not" placeholder="İsteğe bağlı not"></div>
-    <button class="btnm" onclick="musteriEkle()">Müşteriyi Kaydet →</button>
+    <div class="ftl" data-i18n="ftl_yeni_musteri">Yeni Müşteri</div>
+    <div class="r2"><div class="ig"><label data-i18n="ad_soyad">Ad Soyad</label><input type="text" id="m-isim" placeholder="Ad Soyad"></div><div class="ig"><label data-i18n="telefon_lbl">Telefon</label><input type="text" id="m-tel" value="+7 " placeholder="+7 ... (farklı ülke kodu da yazılabilir)"></div></div>
+    <div class="ig"><label data-i18n="platform_nereden">Platform / Nereden Geldi</label><select id="m-plat"><option value="">— Seç —</option></select></div>
+    <div class="ig"><label data-i18n="not_lbl">Not</label><input type="text" id="m-not" placeholder="İsteğe bağlı not"></div>
+    <button class="btnm" onclick="musteriEkle()" data-i18n="btn_musteri_kaydet">Müşteriyi Kaydet →</button>
   </div>
   <div class="ig" style="margin:10px 14px;"><input type="text" id="m-ara" placeholder="🔎 İsim veya telefon ara..." oninput="renderMusteriler()"></div>
   <div id="m-liste"></div>
@@ -508,70 +509,77 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 
 <!-- ===== PARAMETRELER ===== -->
 <div class="page" id="page-param"><div class="main">
+  <div class="fc">
+    <div class="ftl">🌐 Dil / Язык</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btns" id="dil-tr-btn" style="flex:1;" onclick="dilSec('tr')">🇹🇷 Türkçe</button>
+      <button class="btns" id="dil-ru-btn" style="flex:1;" onclick="dilSec('ru')">🇷🇺 Русский</button>
+    </div>
+  </div>
   <div class="fc" style="border-color:rgba(77,171,247,.3);background:rgba(77,171,247,.04);">
-    <div class="ftl" style="color:var(--bl);">🔥 Firebase Ayarları</div>
+    <div class="ftl" style="color:var(--bl);" data-i18n="ftl_firebase">🔥 Firebase Ayarları</div>
     <div style="font-size:12px;color:var(--mu);margin-bottom:10px;">Firebase config bilgilerini girerek bulut senkronizasyonunu etkinleştir. Tüm cihazlar gerçek zamanlı senkronize olur.</div>
-    <div class="ig"><label>API Key</label><input type="text" id="fb-api" class="ig" placeholder="AIzaSy..." style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:12px;font-family:JetBrains Mono,monospace;width:100%;outline:none;"></div>
-    <div class="ig" style="margin-top:6px;"><label>Project ID</label><input type="text" id="fb-proj" placeholder="kasa-takip-xxxxx" style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:12px;font-family:JetBrains Mono,monospace;width:100%;outline:none;"></div>
-    <div class="ig" style="margin-top:6px;"><label>Auth Domain</label><input type="text" id="fb-auth" placeholder="kasa-takip-xxx.firebaseapp.com" style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:12px;font-family:JetBrains Mono,monospace;width:100%;outline:none;"></div>
+    <div class="ig"><label data-i18n="api_key">API Key</label><input type="text" id="fb-api" class="ig" placeholder="AIzaSy..." style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:12px;font-family:JetBrains Mono,monospace;width:100%;outline:none;"></div>
+    <div class="ig" style="margin-top:6px;"><label data-i18n="project_id">Project ID</label><input type="text" id="fb-proj" placeholder="kasa-takip-xxxxx" style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:12px;font-family:JetBrains Mono,monospace;width:100%;outline:none;"></div>
+    <div class="ig" style="margin-top:6px;"><label data-i18n="auth_domain">Auth Domain</label><input type="text" id="fb-auth" placeholder="kasa-takip-xxx.firebaseapp.com" style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:12px;font-family:JetBrains Mono,monospace;width:100%;outline:none;"></div>
     <div style="display:flex;gap:7px;margin-top:10px;">
-      <button class="btnm" onclick="fbConfigKaydet()" style="flex:1;">Firebase Bağla</button>
-      <button class="btns" onclick="cikisYap()">Çıkış Yap</button>
+      <button class="btnm" onclick="fbConfigKaydet()" style="flex:1;" data-i18n="btn_firebase_bagla">Firebase Bağla</button>
+      <button class="btns" onclick="cikisYap()" data-i18n="btn_cikis">Çıkış Yap</button>
     </div>
     <div id="fb-status" style="font-size:11px;margin-top:8px;text-align:center;"></div>
     <div id="fb-user-info" style="font-size:11px;color:var(--mu);margin-top:6px;text-align:center;"></div>
   </div>
   <div class="fc" style="border-color:rgba(255,212,59,.3);background:rgba(255,212,59,.04);">
-    <div class="ftl" style="color:var(--warn);">🔧 Veri Onarımı</div>
+    <div class="ftl" style="color:var(--warn);" data-i18n="ftl_veri_onarim">🔧 Veri Onarımı</div>
     <div style="font-size:12px;color:var(--mu);margin-bottom:10px;">Kasalar yanlış görünüyorsa önce "Verileri Onar" dene. Düzelmezse "Sıfırla" ile temiz başla (işlemler silinir).</div>
     <div style="display:flex;gap:8px;">
-      <button class="btnm" style="background:rgba(255,212,59,.15);color:var(--warn);border:1px solid rgba(255,212,59,.3);flex:1;" onclick="veriOnar()">🔧 Verileri Onar</button>
-      <button class="btnm" style="background:rgba(255,107,107,.15);color:var(--err);border:1px solid rgba(255,107,107,.3);flex:1;" onclick="isleriSifirla()">🗑️ İşlemleri Sıfırla</button>
+      <button class="btnm" style="background:rgba(255,212,59,.15);color:var(--warn);border:1px solid rgba(255,212,59,.3);flex:1;" onclick="veriOnar()" data-i18n="btn_veri_onar">🔧 Verileri Onar</button>
+      <button class="btnm" style="background:rgba(255,107,107,.15);color:var(--err);border:1px solid rgba(255,107,107,.3);flex:1;" onclick="isleriSifirla()" data-i18n="btn_islem_sifirla">🗑️ İşlemleri Sıfırla</button>
     </div>
   </div>
   <div class="fc">
-    <div class="ftl">POS & Vergi</div>
+    <div class="ftl" data-i18n="ftl_pos_vergi">POS & Vergi</div>
     <div class="prow"><div class="plbl">Varsayılan POS Komisyonu (%)</div><input class="pinp" type="number" id="p-pos" step="0.01" onchange="paramSave()"></div>
     <div class="prow"><div class="plbl">Vergi Oranı (%)</div><input class="pinp" type="number" id="p-vgi" step="0.1" onchange="paramSave()"></div>
     <div class="svhint" id="p-hint">✓ Kaydedildi</div>
   </div>
   <div class="fc">
-    <div class="ftl">Masaj Türleri</div>
+    <div class="ftl" data-i18n="ftl_masaj_turleri">Masaj Türleri</div>
     <div id="p-hiz-list"></div>
     <div class="crow" style="margin-top:9px;"><input type="text" id="p-yeni-hiz" placeholder="Yeni masaj türü"><button class="btns p" onclick="hizEkle()">+ Ekle</button></div>
   </div>
   <div class="fc">
-    <div class="ftl">Platform Fiyatlandırması</div>
+    <div class="ftl" data-i18n="ftl_plat_fiyat">Platform Fiyatlandırması</div>
     <div class="hint" style="margin-bottom:10px;">Platform + masaj türü + süre kombinasyonu için fiyat gir. Randevu/işlemde otomatik dolar, manuel değiştirilebilir.</div>
     <div id="p-plat-list"></div>
     <div class="crow" style="margin-top:9px;"><input type="text" id="p-yeni-plat" placeholder="Platform adı (örn: Biglion)"><button class="btns p" onclick="platEkle()">+ Ekle</button></div>
   </div>
   <div class="fc">
-    <div class="ftl">Diğer Gelir Kaynakları</div>
+    <div class="ftl" data-i18n="ftl_gkay">Diğer Gelir Kaynakları</div>
     <div class="hint" style="margin-bottom:9px;">İşlem eklerken "Diğer Gelir" seçilince bu liste çıkar.</div>
     <div class="ctags" id="p-gkay-tags"></div>
     <div class="crow"><input type="text" id="p-yeni-gkay" placeholder="Örn: Kira Geliri, Hediye..."><button class="btns p" onclick="gkayEkle()">+ Ekle</button></div>
   </div>
   <div class="fc">
-    <div class="ftl">Ana Gider Kategorileri</div>
+    <div class="ftl" data-i18n="ftl_akat">Ana Gider Kategorileri</div>
     <div class="ctags" id="p-acat-tags"></div>
     <div class="crow"><input type="text" id="p-yeni-acat" placeholder="Örn: Market"><button class="btns p" onclick="acatEkle()">+ Ekle</button></div>
   </div>
   <div class="fc">
-    <div class="ftl">Çalışma Saatleri</div>
+    <div class="ftl" data-i18n="ftl_calisma_saat">Çalışma Saatleri</div>
     <div class="hint" style="margin-bottom:11px;">Her gün için ayrı saat belirle. Kapalı ise o günü kapat.</div>
     <div id="gun-saat-listesi"></div>
     <div class="svhint" id="calisma-hint">✓ Kaydedildi</div>
   </div>
   <div class="fc">
-    <div class="ftl">Tatil / Kapalı Günler</div>
+    <div class="ftl" data-i18n="ftl_tatil">Tatil / Kapalı Günler</div>
     <div class="hint" style="margin-bottom:9px;">Bu tarihlerde randevu girişi engellenir.</div>
     <div class="r2" style="margin-bottom:8px;">
-      <div class="ig" style="margin-bottom:0;"><label>Başlangıç</label><input type="date" id="p-tatil-bas"></div>
-      <div class="ig" style="margin-bottom:0;"><label>Bitiş (tek gün için aynı)</label><input type="date" id="p-tatil-bit"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="baslangic">Başlangıç</label><input type="date" id="p-tatil-bas"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="bitis_tek_gun">Bitiş (tek gün için aynı)</label><input type="date" id="p-tatil-bit"></div>
     </div>
-    <div class="ig"><label>Neden (isteğe bağlı)</label><input type="text" id="p-tatil-not" placeholder="Tatil, hastalık..."></div>
-    <button class="btnm" style="margin-bottom:10px;" onclick="tatilEkle()">+ Kapalı Gün Ekle</button>
+    <div class="ig"><label data-i18n="neden_ist">Neden (isteğe bağlı)</label><input type="text" id="p-tatil-not" placeholder="Tatil, hastalık..."></div>
+    <button class="btnm" style="margin-bottom:10px;" onclick="tatilEkle()" data-i18n="btn_kapali_gun">+ Kapalı Gün Ekle</button>
     <div id="tatil-liste"></div>
   </div>
 </div></div>
@@ -579,7 +587,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== AKTAR ===== -->
 <div class="page" id="page-aktar"><div class="main">
   <div class="fc">
-    <div class="ftl">📊 Excel'den Veri Aktar</div>
+    <div class="ftl" data-i18n="ftl_excel_aktar">📊 Excel'den Veri Aktar</div>
     <div style="background:rgba(255,212,59,.08);border:1px solid rgba(255,212,59,.3);border-radius:9px;padding:11px;font-size:12px;color:var(--warn);margin-bottom:12px;line-height:1.6;">
       ⚠️ <strong>Birleştirerek Aktar:</strong> mevcut verileri korur, Excel'dekileri ekler.<br>
       ⚠️ <strong>Sıfırlayarak Aktar:</strong> mevcut tüm verileri siler.
@@ -594,8 +602,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
       <div class="rr" style="border-bottom:none;"><div class="rl">📦 Seans Paketi</div><div class="rv2" style="color:var(--ac);">5 kişi</div></div>
     </div>
     <div style="font-size:11px;color:var(--mu);margin-top:8px;line-height:1.5;">📅 Veri aralığı: 02.12.2025 – 31.05.2026. Haziran ve Temmuz 2026 dahil edilmedi — bu iki ay manuel girilecek.</div>
-    <button class="btnm" style="margin-top:12px;" onclick="excelAktar(false)">✓ Birleştirerek Aktar</button>
-    <button class="btns" style="width:100%;margin-top:7px;color:var(--err);border-color:var(--err);" onclick="excelAktar(true)">⚠️ Sıfırlayarak Aktar</button>
+    <button class="btnm" style="margin-top:12px;" onclick="excelAktar(false)" data-i18n="btn_birlestir_aktar">✓ Birleştirerek Aktar</button>
+    <button class="btns" style="width:100%;margin-top:7px;color:var(--err);border-color:var(--err);" onclick="excelAktar(true)" data-i18n="btn_sifirla_aktar">⚠️ Sıfırlayarak Aktar</button>
     <div id="aktar-sonuc" style="display:none;margin-top:10px;background:rgba(56,217,169,.1);border:1px solid rgba(56,217,169,.3);border-radius:9px;padding:11px;font-size:12px;color:var(--gr);"></div>
   </div>
 </div></div>
@@ -603,16 +611,16 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== ÖZET ===== -->
 <div class="page" id="page-ozet"><div class="main">
   <div class="fc" style="padding:12px 14px;">
-    <div class="ftl" style="margin-bottom:7px;">Tarih Aralığı</div>
+    <div class="ftl" style="margin-bottom:7px;" data-i18n="ftl_tarih_araligi">Tarih Aralığı</div>
     <div class="r2" style="margin-bottom:7px;">
-      <div class="ig" style="margin-bottom:0;"><label>Başlangıç</label><input type="date" id="oz-bas" onchange="renderOzet()"></div>
-      <div class="ig" style="margin-bottom:0;"><label>Bitiş</label><input type="date" id="oz-bit" onchange="renderOzet()"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="baslangic">Başlangıç</label><input type="date" id="oz-bas" onchange="renderOzet()"></div>
+      <div class="ig" style="margin-bottom:0;"><label data-i18n="bitis">Bitiş</label><input type="date" id="oz-bit" onchange="renderOzet()"></div>
     </div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;">
-      <button class="btns" onclick="ozPer('bugun')">Bugün</button>
-      <button class="btns" onclick="ozPer('hafta')">Bu Hafta</button>
-      <button class="btns" onclick="ozPer('ay')">Bu Ay</button>
-      <button class="btns" onclick="ozPer('tumu')">Tümü</button>
+      <button class="btns" onclick="ozPer('bugun')" data-i18n="btn_bugun">Bugün</button>
+      <button class="btns" onclick="ozPer('hafta')" data-i18n="btn_bu_hafta">Bu Hafta</button>
+      <button class="btns" onclick="ozPer('ay')" data-i18n="btn_bu_ay">Bu Ay</button>
+      <button class="btns" onclick="ozPer('tumu')" data-i18n="btn_tumu">Tümü</button>
     </div>
   </div>
   <div id="ozet-icerik"></div>
@@ -621,15 +629,15 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <!-- ===== KULLANICILAR ===== -->
 <div class="page" id="page-kullanicilar"><div class="main">
   <div class="fc">
-    <div class="ftl">Yeni Kullanıcı Davet Et</div>
+    <div class="ftl" data-i18n="ftl_yeni_kullanici">Yeni Kullanıcı Davet Et</div>
     <div class="hint" style="margin-bottom:10px;">Önce Firebase Console → Authentication → Users'tan kullanıcıyı e-posta/şifre ile oluştur. Sonra buradan izinlerini ayarla.</div>
-    <div class="ig"><label>Kullanıcı E-postası</label><input type="email" id="ku-email" placeholder="sekreter@masaj.com"></div>
-    <div class="ig"><label>Görünen İsim (isteğe bağlı)</label><input type="text" id="ku-isim" placeholder="Ayşe Hanım"></div>
+    <div class="ig"><label data-i18n="kullanici_email">Kullanıcı E-postası</label><input type="email" id="ku-email" placeholder="sekreter@masaj.com"></div>
+    <div class="ig"><label data-i18n="gorunen_isim">Görünen İsim (isteğe bağlı)</label><input type="text" id="ku-isim" placeholder="Ayşe Hanım"></div>
     <div style="margin-bottom:12px;">
       <label style="display:block;font-size:11px;color:var(--mu);font-weight:500;margin-bottom:7px;">İzinler</label>
       <div id="ku-izin-grid" style="display:flex;flex-direction:column;gap:7px;"></div>
     </div>
-    <button class="btnm" onclick="kullaniciEkle()">Kullanıcı Ekle / Güncelle →</button>
+    <button class="btnm" onclick="kullaniciEkle()" data-i18n="btn_kullanici_ekle">Kullanıcı Ekle / Güncelle →</button>
   </div>
 
   <div class="shdr"><span class="shdr-lbl">Kayıtlı Kullanıcılar</span></div>
@@ -641,22 +649,22 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <div class="modal">
   <div class="mtl" id="sm-tl">Seans Kullan</div>
   <div id="sm-input-area">
-    <div class="ig"><label>Tarih</label><input type="date" id="sm-tarih"></div>
-    <div class="ig"><label>Masaj Türü</label><select id="sm-hiz"><optgroup id="sm-hiz-og" label="Masaj"></optgroup></select></div>
+    <div class="ig"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="sm-tarih"></div>
+    <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="sm-hiz"><optgroup id="sm-hiz-og" label="Masaj"></optgroup></select></div>
     <div class="r2">
-      <div class="ig" style="max-width:95px;"><label>Saat</label><input type="time" id="sm-saat" value="10:00"></div>
-      <div class="ig"><label>Süre (dk)</label><input type="number" id="sm-sure" value="60" min="1"></div>
+      <div class="ig" style="max-width:95px;"><label data-i18n="saat_lbl">Saat</label><input type="time" id="sm-saat" value="10:00"></div>
+      <div class="ig"><label data-i18n="sure_dk">Süre (dk)</label><input type="number" id="sm-sure" value="60" min="1"></div>
     </div>
-    <div class="ig"><label>Not</label><input type="text" id="sm-not" placeholder="Ek bilgi..."></div>
+    <div class="ig"><label data-i18n="not_lbl">Not</label><input type="text" id="sm-not" placeholder="Ek bilgi..."></div>
     <div class="ig" style="margin-bottom:4px;">
       <label><input type="checkbox" id="sm-rv-ekle" checked style="margin-right:5px;">Randevuya da ekle (takvimde görünsün)</label>
     </div>
-    <div class="mact"><button class="btnm" style="flex:1;" onclick="kullanS()">✓ Seans Kullan</button><button class="btns" onclick="closeSM()">İptal</button></div>
+    <div class="mact"><button class="btnm" style="flex:1;" onclick="kullanS()" data-i18n="btn_seans_kullan">✓ Seans Kullan</button><button class="btns" onclick="closeSM()" data-i18n="btn_iptal">İptal</button></div>
   </div>
   <div id="sm-done-notice" style="display:none;font-size:12px;color:var(--mu);background:var(--sf2);border-radius:9px;padding:9px 11px;margin-bottom:9px;">✅ Bu paket tamamlandı. Aşağıda hangi tarihte hangi masajların yapıldığını görebilirsin.</div>
-  <div id="sm-close-only" style="display:none;"><button class="btns" style="width:100%;" onclick="closeSM()">Kapat</button></div>
+  <div id="sm-close-only" style="display:none;"><button class="btns" style="width:100%;" onclick="closeSM()" data-i18n="btn_kapat">Kapat</button></div>
   <div class="divl"></div>
-  <div class="ftl" style="margin-bottom:7px;">Geçmiş</div>
+  <div class="ftl" style="margin-bottom:7px;" data-i18n="ftl_gecmis">Geçmiş</div>
   <div id="sm-log"></div>
 </div></div>
 
@@ -666,15 +674,15 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   <div class="mtl">İşlemi Düzenle</div>
   <div class="ig"><label id="im-tip-lbl">Tür</label><div style="font-size:13px;color:var(--mu);margin-bottom:9px;" id="im-tip-txt"></div></div>
   <div class="r2">
-    <div class="ig"><label>Tarih</label><input type="date" id="im-tarih"></div>
-    <div class="ig"><label>Tutar (₽)</label><input type="number" id="im-tutar" step="0.01"></div>
+    <div class="ig"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="im-tarih"></div>
+    <div class="ig"><label data-i18n="tutar_rub">Tutar (₽)</label><input type="number" id="im-tutar" step="0.01"></div>
   </div>
-  <div class="ig" id="im-acat-grp" style="display:none;"><label>Ana Kategori</label><select id="im-acat"><option value="">— Seç —</option></select></div>
-  <div class="ig"><label>Kasa</label><select id="im-gkasa">
+  <div class="ig" id="im-acat-grp" style="display:none;"><label data-i18n="ana_kategori">Ana Kategori</label><select id="im-acat"><option value="">— Seç —</option></select></div>
+  <div class="ig"><label data-i18n="kasa_lbl">Kasa</label><select id="im-gkasa">
     <option value="pos">🏦 POS</option><option value="nak">💰 Nakit</option><option value="bir">👤 Bireysel Hesap</option><option value="yurt">🌍 Yurt Dışı / Diğer</option>
   </select></div>
-  <div class="ig"><label>Not / Açıklama</label><input type="text" id="im-not" placeholder="Ek bilgi..."></div>
-  <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetIM()">✓ Kaydet</button><button class="btns" onclick="closeIM()">İptal</button></div>
+  <div class="ig"><label data-i18n="not_aciklama">Not / Açıklama</label><input type="text" id="im-not" placeholder="Ek bilgi..."></div>
+  <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetIM()" data-i18n="btn_kaydet_check">✓ Kaydet</button><button class="btns" onclick="closeIM()" data-i18n="btn_iptal">İptal</button></div>
 </div></div>
 
 <!-- RANDEVU İŞLE MODAL -->
@@ -692,14 +700,14 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     </div>
     <div class="posbox" id="rv-posbox">
       <div class="r2">
-        <div class="ig" style="margin-bottom:0;"><label>POS'tan Çekilen (₽)</label><input type="number" id="rv-poscek" step="0.01" oninput="rvPosHes()"></div>
-        <div class="ig" style="margin-bottom:0;max-width:110px;"><label>Komisyon %</label><input type="number" id="rv-posoran" step="0.01" oninput="rvPosHes()"></div>
+        <div class="ig" style="margin-bottom:0;"><label data-i18n="pos_cekilen">POS'tan Çekilen (₽)</label><input type="number" id="rv-poscek" step="0.01" oninput="rvPosHes()"></div>
+        <div class="ig" style="margin-bottom:0;max-width:110px;"><label data-i18n="komisyon_pct">Komisyon %</label><input type="number" id="rv-posoran" step="0.01" oninput="rvPosHes()"></div>
       </div>
       <div class="posres" id="rv-posres"></div>
     </div>
   </div>
-  <div id="rv-tutar-step" class="ig"><label>Tutar (₽)</label><input type="number" id="rv-m-tutar" step="0.01"></div>
-  <div class="mact"><button class="btnm" style="flex:1;" onclick="rvYap()">✓ İşlemi Gerçekleştir</button><button class="btns" onclick="closeRVM()">İptal</button></div>
+  <div id="rv-tutar-step" class="ig"><label data-i18n="tutar_rub">Tutar (₽)</label><input type="number" id="rv-m-tutar" step="0.01"></div>
+  <div class="mact"><button class="btnm" style="flex:1;" onclick="rvYap()" data-i18n="btn_islem_gerceklestir">✓ İşlemi Gerçekleştir</button><button class="btns" onclick="closeRVM()" data-i18n="btn_iptal">İptal</button></div>
 </div></div>
 
 <script>
@@ -738,7 +746,8 @@ let D = {
   }),
   tatiller:      loadStorage('kt3_tat',  []),
   gelirKaynaklar:loadStorage('kt3_gkay', ['Yurt Dışı Getiri','Eşten Alınan','Dış Kaynak / Diğer']),
-  musteri: loadStorage('kt3_mus', [])
+  musteri: loadStorage('kt3_mus', []),
+  dil: loadStorage('kt3_dil', 'tr')
 };
 // Güvenlik: eksik alanları tamamla
 if(!D.calisma) D.calisma={acilis:'09:00',kapanis:'20:00',gunler:[1,2,3,4,5,6]};
@@ -762,6 +771,7 @@ function saveLocal(){
   localStorage.setItem('kt3_tat',    JSON.stringify(D.tatiller));
   localStorage.setItem('kt3_gkay',   JSON.stringify(D.gelirKaynaklar));
   localStorage.setItem('kt3_mus',    JSON.stringify(D.musteri));
+  localStorage.setItem('kt3_dil',    JSON.stringify(D.dil));
 }
 
 function save(){
@@ -1267,6 +1277,225 @@ function silI(id){
 }
 
 // ===================== RENDER =====================
+const I18N={
+ tr:{
+  ad_soyad:'Ad Soyad',
+  alis_tarihi:'Alış Tarihi',
+  ana_kategori:'Ana Kategori',
+  api_key:'API Key',
+  auth_domain:'Auth Domain',
+  baslangic:'Başlangıç',
+  bitis:'Bitiş',
+  bitis_tek_gun:'Bitiş (tek gün için aynı)',
+  btn_birlestir_aktar:'✓ Birleştirerek Aktar',
+  btn_bu_ay:'Bu Ay',
+  btn_bu_hafta:'Bu Hafta',
+  btn_bugun:'Bugün',
+  btn_cikis:'Çıkış Yap',
+  btn_ekle_ok:'Ekle →',
+  btn_firebase_bagla:'Firebase Bağla',
+  btn_iptal:'İptal',
+  btn_islem_gerceklestir:'✓ İşlemi Gerçekleştir',
+  btn_islem_sifirla:'🗑️ İşlemleri Sıfırla',
+  btn_kapali_gun:'+ Kapalı Gün Ekle',
+  btn_kapat:'Kapat',
+  btn_kaydet_check:'✓ Kaydet',
+  btn_kullanici_ekle:'Kullanıcı Ekle / Güncelle →',
+  btn_musteri_kaydet:'Müşteriyi Kaydet →',
+  btn_paket_kaydet:'Paketi Kaydet →',
+  btn_randevu_kaydet:'Randevu Kaydet →',
+  btn_seans_kullan:'✓ Seans Kullan',
+  btn_sifirla_aktar:'⚠️ Sıfırlayarak Aktar',
+  btn_tumu:'Tümü',
+  btn_veri_onar:'🔧 Verileri Onar',
+  btn_virman_tumu:'Tümünü Virman Et →',
+  fiyat_rub:'Fiyat (₽)',
+  ftl_akat:'Ana Gider Kategorileri',
+  ftl_bugun_rv:'📅 Bugünkü Randevular',
+  ftl_calisma_saat:'Çalışma Saatleri',
+  ftl_excel_aktar:'📊 Excel\'den Veri Aktar',
+  ftl_firebase:'🔥 Firebase Ayarları',
+  ftl_gecmis:'Geçmiş',
+  ftl_gkay:'Diğer Gelir Kaynakları',
+  ftl_gun_detay:'Gün Detayı',
+  ftl_harcama_detay:'Harcama Detayı',
+  ftl_kazanc_dagilim:'Kazanç Dağılımı',
+  ftl_masaj_turleri:'Masaj Türleri',
+  ftl_masaj_vs:'Masaj vs. Diğer Gelir',
+  ftl_plat_fiyat:'Platform Fiyatlandırması',
+  ftl_pos_vergi:'POS & Vergi',
+  ftl_tarih_araligi:'Tarih Aralığı',
+  ftl_tarih_filtre:'Tarih Filtresi',
+  ftl_tatil:'Tatil / Kapalı Günler',
+  ftl_veri_onarim:'🔧 Veri Onarımı',
+  ftl_yeni_islem:'Yeni İşlem',
+  ftl_yeni_kullanici:'Yeni Kullanıcı Davet Et',
+  ftl_yeni_musteri:'Yeni Müşteri',
+  ftl_yeni_randevu:'Yeni Randevu',
+  ftl_yeni_seans:'Yeni Seans Paketi',
+  gelir_kaynagi:'Gelir Kaynağı',
+  gorunen_isim:'Görünen İsim (isteğe bağlı)',
+  hedef_hesap:'Hedef Hesap',
+  kasa_lbl:'Kasa',
+  kaynak_hesap:'Kaynak Hesap',
+  kisi_adi:'Kişi Adı',
+  kisi_adi_ist:'Kişi Adı (isteğe bağlı)',
+  komisyon_pct:'Komisyon %',
+  kullanici_email:'Kullanıcı E-postası',
+  masaj_turu:'Masaj Türü',
+  nav_ana:'Ana',
+  nav_giderler:'Giderler',
+  nav_islemler:'İşlemler',
+  nav_musteriler:'Müşteriler',
+  nav_ozet:'Özet',
+  nav_param:'Param.',
+  nav_randevu:'Randevu',
+  nav_seanslar:'Seanslar',
+  nav_takvim:'Takvim',
+  neden_ist:'Neden (isteğe bağlı)',
+  not_aciklama:'Not / Açıklama',
+  not_ist:'Not (isteğe bağlı)',
+  not_lbl:'Not',
+  odeme_turu:'Ödeme Türü',
+  platform_lbl:'Platform',
+  platform_nereden:'Platform / Nereden Geldi',
+  pos_cekilen:'POS\'tan Çekilen (₽)',
+  project_id:'Project ID',
+  saat_lbl:'Saat',
+  seans_lbl:'Seans',
+  seans_paketi_varsa:'Seans Paketi (varsa)',
+  sure_dakika:'Süre (dakika)',
+  sure_dk:'Süre (dk)',
+  tarih_lbl:'Tarih',
+  telefon_lbl:'Telefon',
+  toplam_tutar:'Toplam Tutar (₽)',
+  tutar_rub:'Tutar (₽)'
+ },
+ ru:{
+  ad_soyad:'Имя Фамилия',
+  alis_tarihi:'Дата покупки',
+  ana_kategori:'Основная категория',
+  api_key:'API-ключ',
+  auth_domain:'Auth Domain',
+  baslangic:'Начало',
+  bitis:'Конец',
+  bitis_tek_gun:'Конец (для одного дня так же)',
+  btn_birlestir_aktar:'✓ Импорт с объединением',
+  btn_bu_ay:'В этом месяце',
+  btn_bu_hafta:'На этой неделе',
+  btn_bugun:'Сегодня',
+  btn_cikis:'Выйти',
+  btn_ekle_ok:'Добавить →',
+  btn_firebase_bagla:'Подключить Firebase',
+  btn_iptal:'Отмена',
+  btn_islem_gerceklestir:'✓ Выполнить операцию',
+  btn_islem_sifirla:'🗑️ Сбросить операции',
+  btn_kapali_gun:'+ Добавить выходной',
+  btn_kapat:'Закрыть',
+  btn_kaydet_check:'✓ Сохранить',
+  btn_kullanici_ekle:'Добавить / Обновить пользователя →',
+  btn_musteri_kaydet:'Сохранить клиента →',
+  btn_paket_kaydet:'Сохранить пакет →',
+  btn_randevu_kaydet:'Сохранить запись →',
+  btn_seans_kullan:'✓ Использовать сеанс',
+  btn_sifirla_aktar:'⚠️ Импорт с заменой',
+  btn_tumu:'Все',
+  btn_veri_onar:'🔧 Восстановить данные',
+  btn_virman_tumu:'Перевести всё →',
+  fiyat_rub:'Цена (₽)',
+  ftl_akat:'Основные категории расходов',
+  ftl_bugun_rv:'📅 Записи на сегодня',
+  ftl_calisma_saat:'Рабочие часы',
+  ftl_excel_aktar:'📊 Импорт данных из Excel',
+  ftl_firebase:'🔥 Настройки Firebase',
+  ftl_gecmis:'История',
+  ftl_gkay:'Другие источники дохода',
+  ftl_gun_detay:'Детали дня',
+  ftl_harcama_detay:'Детали расходов',
+  ftl_kazanc_dagilim:'Распределение доходов',
+  ftl_masaj_turleri:'Виды массажа',
+  ftl_masaj_vs:'Массаж и другие доходы',
+  ftl_plat_fiyat:'Цены по платформам',
+  ftl_pos_vergi:'POS и налог',
+  ftl_tarih_araligi:'Диапазон дат',
+  ftl_tarih_filtre:'Фильтр по дате',
+  ftl_tatil:'Праздники / Выходные',
+  ftl_veri_onarim:'🔧 Восстановление данных',
+  ftl_yeni_islem:'Новая операция',
+  ftl_yeni_kullanici:'Пригласить пользователя',
+  ftl_yeni_musteri:'Новый клиент',
+  ftl_yeni_randevu:'Новая запись',
+  ftl_yeni_seans:'Новый пакет сеансов',
+  gelir_kaynagi:'Источник дохода',
+  gorunen_isim:'Отображаемое имя (необязательно)',
+  hedef_hesap:'Счёт назначения',
+  kasa_lbl:'Касса',
+  kaynak_hesap:'Счёт источника',
+  kisi_adi:'Имя клиента',
+  kisi_adi_ist:'Имя клиента (необязательно)',
+  komisyon_pct:'Комиссия %',
+  kullanici_email:'Email пользователя',
+  masaj_turu:'Вид массажа',
+  nav_ana:'Главная',
+  nav_giderler:'Расходы',
+  nav_islemler:'Операции',
+  nav_musteriler:'Клиенты',
+  nav_ozet:'Итоги',
+  nav_param:'Настр.',
+  nav_randevu:'Запись',
+  nav_seanslar:'Сеансы',
+  nav_takvim:'Календарь',
+  neden_ist:'Причина (необязательно)',
+  not_aciklama:'Заметка / Описание',
+  not_ist:'Заметка (необязательно)',
+  not_lbl:'Заметка',
+  odeme_turu:'Способ оплаты',
+  platform_lbl:'Платформа',
+  platform_nereden:'Платформа / Откуда пришёл',
+  pos_cekilen:'Списано через POS (₽)',
+  project_id:'Project ID',
+  saat_lbl:'Время',
+  seans_lbl:'Сеанс',
+  seans_paketi_varsa:'Пакет сеансов (если есть)',
+  sure_dakika:'Длительность (мин)',
+  sure_dk:'Длительность (мин)',
+  tarih_lbl:'Дата',
+  telefon_lbl:'Телефон',
+  toplam_tutar:'Общая сумма (₽)',
+  tutar_rub:'Сумма (₽)'
+ }
+};
+
+function t(key){ return (I18N[D.dil]&&I18N[D.dil][key])||I18N.tr[key]||key; }
+function applyLang(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    el.textContent=t(k);
+  });
+  // Dinamik işlem/ödeme etiketlerini de güncelle
+  Object.assign(TIPLER.pos,   {l: D.dil==='ru'?'Карта (POS)':'POS'});
+  Object.assign(TIPLER.nf,    {l: D.dil==='ru'?'Наличные с чеком':'Nakit Fişli'});
+  Object.assign(TIPLER.nfs,   {l: D.dil==='ru'?'Наличные без чека':'Nakit Fişsiz'});
+  Object.assign(TIPLER.bir,   {l: D.dil==='ru'?'Личный счёт':'Bireysel'});
+  Object.assign(TIPLER.yurt,  {l: D.dil==='ru'?'Другие доходы':'Diğer Gelirler'});
+  Object.assign(TIPLER.gider, {l: D.dil==='ru'?'Расход':'Gider'});
+  Object.assign(TIPLER.virman,{l: D.dil==='ru'?'Перевод':'Virman'});
+  document.documentElement.lang = D.dil==='ru'?'ru':'tr';
+  renderAll();
+  if(document.getElementById('page-islemler')&&document.getElementById('page-islemler').classList.contains('on'))renderTumI();
+  if(document.getElementById('page-giderler')&&document.getElementById('page-giderler').classList.contains('on'))renderG();
+  if(document.getElementById('page-seanslar')&&document.getElementById('page-seanslar').classList.contains('on'))renderS();
+  if(document.getElementById('page-musteriler')&&document.getElementById('page-musteriler').classList.contains('on'))renderMusteriler();
+  if(document.getElementById('page-param')&&document.getElementById('page-param').classList.contains('on'))renderParam();
+  const trBtn=document.getElementById('dil-tr-btn'), ruBtn=document.getElementById('dil-ru-btn');
+  if(trBtn&&ruBtn){ trBtn.classList.toggle('on',D.dil==='tr'); ruBtn.classList.toggle('on',D.dil==='ru'); }
+}
+function dilSec(d){
+  D.dil=d;
+  save();
+  applyLang();
+}
+
 const TIPLER={
   pos:{l:'POS',i:'🏦'},nf:{l:'Nakit Fişli',i:'🧾'},nfs:{l:'Nakit Fişsiz',i:'💵'},
   bir:{l:'Bireysel',i:'👤'},yurt:{l:'Diğer Gelirler',i:'🌍'},
@@ -1556,7 +1785,7 @@ function renderBugunRV(){
   const w=document.getElementById('bugun-rv-wrap');
   if(!brvs.length){w.innerHTML='';return;}
   w.innerHTML=`<div class="fc" style="border-color:rgba(108,99,255,.3);background:rgba(108,99,255,.05);margin-bottom:12px;">
-    <div class="ftl" style="color:var(--ac);">📅 Bugünkü Randevular</div>
+    <div class="ftl" style="color:var(--ac);" data-i18n="ftl_bugun_rv">📅 Bugünkü Randevular</div>
     ${brvs.map(r=>`<div style="background:var(--sf2);border-radius:9px;padding:10px;margin-bottom:7px;">
       <div class="rv-hdr"><div><div class="rv-isim">${r.isim}</div><div class="rv-det">${r.hiz}${r.plat?' · ['+r.plat+']':''} · ${r.sure} dk</div></div><div class="rv-saat">${r.saat}</div></div>
       ${r.fiyat?`<div class="rv-fiyat">${para(r.fiyat)}</div>`:''}
@@ -1817,7 +2046,7 @@ function musteriEkle(){
   D.musteri.unshift({id:Date.now(),isim,tel,plat,not});
   save();renderMusteriler();
   document.getElementById('m-isim').value='';
-  document.getElementById('m-tel').value='';
+  document.getElementById('m-tel').value='+7 ';
   document.getElementById('m-plat').value='';
   document.getElementById('m-not').value='';
 }
@@ -2392,12 +2621,12 @@ function renderOzet(){
       <div class="stat-c"><div class="stat-l">Tahmini Vergi (%${D.par.vergi||6})</div><div class="stat-v" style="color:var(--warn)">${para(tahminiVergi)}</div></div>
     </div>
     <div class="fc">
-      <div class="ftl">Masaj vs. Diğer Gelir</div>
+      <div class="ftl" data-i18n="ftl_masaj_vs">Masaj vs. Diğer Gelir</div>
       <div class="rr"><div class="rl"><div class="rdot" style="background:var(--gr)"></div>💆 Masajdan Kazanç</div><div class="rv2" style="color:var(--gr)">${para(masajKazanc)} <span style="color:var(--mu);font-size:10px;">(%${masajYuzde})</span></div></div>
       <div class="rr" style="border-bottom:none;"><div class="rl"><div class="rdot" style="background:var(--warn)"></div>🌍 Diğer Gelirlerden</div><div class="rv2" style="color:var(--warn)">${para(digerGelirKazanc)} <span style="color:var(--mu);font-size:10px;">(%${digerGelirYuzde})</span></div></div>
     </div>
     <div class="fc">
-      <div class="ftl">Kazanç Dağılımı</div>
+      <div class="ftl" data-i18n="ftl_kazanc_dagilim">Kazanç Dağılımı</div>
       <div class="rr"><div class="rl"><div class="rdot" style="background:var(--bl)"></div>🏦 POS</div><div class="rv2" style="color:var(--bl)">${para(posG)}</div></div>
       <div class="rr"><div class="rl"><div class="rdot" style="background:var(--gr)"></div>🧾 Nakit Fişli</div><div class="rv2" style="color:var(--gr)">${para(nfG)}</div></div>
       <div class="rr"><div class="rl"><div class="rdot" style="background:var(--or)"></div>💵 Nakit Fişsiz</div><div class="rv2" style="color:var(--or)">${para(nfsG)}</div></div>
@@ -2406,7 +2635,7 @@ function renderOzet(){
       <div class="rr" style="border-bottom:none;"><div class="rl"><div class="rdot" style="background:var(--tx)"></div>Vergiye giren</div><div class="rv2">${para(vergiTabani)}</div></div>
     </div>
     <div class="fc">
-      <div class="ftl">Harcama Detayı</div>
+      <div class="ftl" data-i18n="ftl_harcama_detay">Harcama Detayı</div>
       ${gRows||'<div class="empty">Gider yok.</div>'}
       <div class="rr" style="border-bottom:none;padding-top:11px;"><div class="rl" style="font-weight:700;">Toplam Harcama</div><div class="rv2" style="color:var(--err)">-${para(topGider)}</div></div>
     </div>
@@ -2867,6 +3096,7 @@ async function checkInviteOnFirstLogin(user){
 document.addEventListener('DOMContentLoaded', ()=>{
   initFirebase();
   renderFbInputs();
+  applyLang();
   // Enter key login
   document.getElementById('login-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') loginYap(); });
 });
