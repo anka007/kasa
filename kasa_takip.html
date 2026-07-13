@@ -2075,8 +2075,15 @@ function gkayDuzenle(k,i){
   if(!y||y===k)return;
   if(D.gelirKaynaklar.includes(y)){alert('Bu isimde kaynak zaten var.');return;}
   D.gelirKaynaklar[i]=y;
-  D.isl.forEach(x=>{ if(x.tip==='yurt'&&x.gkat===k) x.gkat=y; });
-  save();renderGkayTags();buildGkaySelect();
+  let guncellenen=0;
+  D.isl.forEach(x=>{
+    if(x.tip==='yurt' && (x.gkat||'').trim().toLowerCase()===k.trim().toLowerCase()){
+      x.gkat=y;
+      guncellenen++;
+    }
+  });
+  save();renderGkayTags();buildGkaySelect();initIT();renderTumI();
+  if(guncellenen>0) alert(`"${k}" → "${y}" olarak güncellendi. ${guncellenen} geçmiş kayıt da otomatik güncellendi.`);
 }
 
 function renderGkayTags(){
@@ -2233,14 +2240,21 @@ function acatDuzenle(k,i){
   if(D.akat.includes(y)){alert('Bu isimde kategori zaten var.');return;}
   D.akat[i]=y;
   if(D.alkat[k]){D.alkat[y]=D.alkat[k];delete D.alkat[k];}
+  let guncellenen=0;
   D.isl.forEach(x=>{
-    if(x.anaKat===k){
+    if(x.tip!=='gider') return;
+    const anaMatch = (x.anaKat||'').trim().toLowerCase()===k.trim().toLowerCase();
+    const gkatMatch = x.gkat && (x.gkat===k || x.gkat.startsWith(k+' / '));
+    if(anaMatch || gkatMatch){
       x.anaKat=y;
       if(x.gkat===k) x.gkat=y;
       else if(x.gkat&&x.gkat.startsWith(k+' / ')) x.gkat=y+x.gkat.substring(k.length);
+      else if(!x.gkat) x.gkat=y;
+      guncellenen++;
     }
   });
-  save();renderAcatTags();buildSelects();
+  save();renderAcatTags();buildSelects();initGT();renderG();initIT();renderTumI();
+  if(guncellenen>0) alert(`"${k}" → "${y}" olarak güncellendi. ${guncellenen} geçmiş kayıt da otomatik güncellendi.`);
 }
 function renderAcatTags(){
   document.getElementById('p-acat-tags').innerHTML=D.akat.map((k,i)=>
