@@ -777,6 +777,7 @@ function saveLocal(){
 function save(){
   saveLocal();
   if(typeof isFirebaseMode!=='undefined' && isFirebaseMode){
+    pendingSave = true;
     clearTimeout(syncTimeout);
     syncTimeout = setTimeout(cloudSaveAll, 1500); // debounce 1.5s
   }
@@ -2715,6 +2716,7 @@ let fbAuth = null;
 let currentUser = null;
 let isFirebaseMode = false;
 let syncTimeout = null;
+let pendingSave = false;
 let currentUserRol = 'admin'; // varsayılan: ilk kullanıcı admin
 let currentUserIzinler = Object.keys(TUM_IZINLER); // admin = tüm izinler
 let kayitliKullanicilar = {}; // {uid: {email, isim, rol, izinler}}
@@ -2903,10 +2905,14 @@ async function cloudSaveAll(){
   });
   try {
     await batch.commit();
+    pendingSave = false;
     showSync('✓ Kaydedildi', '#38d9a9', 2000);
   } catch(e){
-    showSync('❌ Hata', '#ff6b6b', 3000);
+    showSync('❌ Kaydedilemedi, tekrar deneniyor...', '#ff6b6b', 3000);
     console.error(e);
+    // pendingSave true kalır — senkronizasyon bu kaydı ezmeyecek, birazdan tekrar dene
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(cloudSaveAll, 5000);
   }
 }
 
@@ -2918,6 +2924,7 @@ function izinVarYazma(){
 
 async function cloudLoadAll(){
   if(!isFirebaseMode || !db || !currentUser) return;
+  if(pendingSave) return; // henüz sunucuya yazılmamış yerel değişiklik var — üzerine yazma
   showSync('⏬ Yükleniyor...', '#ffd43b');
   const ownerUid = window._ownerUid || currentUser.uid;
   const keys = ['isl','sea','rv','hiz','plat','akat','alkat','par','cal','tat','gkay','mus'];
