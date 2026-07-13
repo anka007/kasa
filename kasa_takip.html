@@ -497,7 +497,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 <div class="page" id="page-musteriler"><div class="main">
   <div class="fc">
     <div class="ftl">Yeni Müşteri</div>
-    <div class="r2"><div class="ig"><label>Ad Soyad</label><input type="text" id="m-isim" placeholder="Ad Soyad"></div><div class="ig"><label>Telefon</label><input type="text" id="m-tel" placeholder="+90 5xx xxx xx xx"></div></div>
+    <div class="r2"><div class="ig"><label>Ad Soyad</label><input type="text" id="m-isim" placeholder="Ad Soyad"></div><div class="ig"><label>Telefon</label><input type="text" id="m-tel" placeholder="+_ _ ülke koduyla telefon"></div></div>
     <div class="ig"><label>Platform / Nereden Geldi</label><select id="m-plat"><option value="">— Seç —</option></select></div>
     <div class="ig"><label>Not</label><input type="text" id="m-not" placeholder="İsteğe bağlı not"></div>
     <button class="btnm" onclick="musteriEkle()">Müşteriyi Kaydet →</button>
@@ -1537,7 +1537,7 @@ function renderRV(){
   const el=document.getElementById('rv-liste');if(!D.rv.length){el.innerHTML='<div class="empty">Henüz randevu yok.</div>';return;}
   const bug=today();const g={};
   D.rv.forEach(r=>{if(!g[r.tarih])g[r.tarih]=[];g[r.tarih].push(r);});
-  el.innerHTML=Object.keys(g).sort().map(t=>{
+  el.innerHTML=Object.keys(g).sort().reverse().map(t=>{
     const isTod=t===bug;
     return`<div style="font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;padding:6px 0 4px;">${fd(t)}${isTod?'<span class="tchip">Bugün</span>':''}</div>`
       +g[t].map(r=>`<div class="rv-card ${r.yapildi?'rv-done':''}">
@@ -2176,7 +2176,18 @@ function hizDuzenle(i){
     }
   });
   D.hiz[i].isim=y;
+  // Geçmiş randevu kayıtlarını da güncelle
+  let guncellenen=0;
+  D.rv.forEach(r=>{ if(r.hiz===eski){ r.hiz=y; guncellenen++; } });
+  // İşlem geçmişindeki not metinlerinde de başta geçen masaj adını güncelle (ör: "Klasik Masaj · [Biglion] · 60 dk")
+  D.isl.forEach(x=>{
+    if(x.not && x.not.startsWith(eski+' · ')){
+      x.not=y+x.not.substring(eski.length);
+      guncellenen++;
+    }
+  });
   save();renderParam();buildSelects();
+  if(guncellenen>0) alert(`"${eski}" → "${y}" olarak güncellendi. ${guncellenen} geçmiş kayıt da otomatik güncellendi.`);
 }
 function platEkle(){const v=document.getElementById('p-yeni-plat').value.trim();if(!v)return;if(!D.plat.find(p=>p.isim===v))D.plat.push({isim:v,fiyatlar:{}});save();renderParam();document.getElementById('p-yeni-plat').value='';}
 function platSil(i){if(!confirm('Sil?'))return;D.plat.splice(i,1);save();renderParam();buildSelects();}
@@ -2193,7 +2204,19 @@ function platDuzenle(i){
   if(!y||y===eski)return;
   if(D.plat.find((p,idx)=>p.isim===y&&idx!==i)){alert('Bu isimde platform zaten var.');return;}
   D.plat[i].isim=y;
+  // Geçmiş randevu ve müşteri kayıtlarını da güncelle
+  let guncellenen=0;
+  D.rv.forEach(r=>{ if(r.plat===eski){ r.plat=y; guncellenen++; } });
+  D.musteri.forEach(m=>{ if(m.plat===eski){ m.plat=y; guncellenen++; } });
+  // İşlem geçmişindeki not metinlerinde köşeli parantez içindeki platform adını güncelle (ör: "[Biglion]")
+  D.isl.forEach(x=>{
+    if(x.not && x.not.includes('['+eski+']')){
+      x.not=x.not.split('['+eski+']').join('['+y+']');
+      guncellenen++;
+    }
+  });
   save();renderParam();buildSelects();
+  if(guncellenen>0) alert(`"${eski}" → "${y}" olarak güncellendi. ${guncellenen} geçmiş kayıt da otomatik güncellendi.`);
 }
 function acatEkle(){const v=document.getElementById('p-yeni-acat').value.trim();if(!v)return;if(!D.akat.includes(v)){D.akat.push(v);if(!D.alkat[v])D.alkat[v]=[];}save();renderAcatTags();buildSelects();document.getElementById('p-yeni-acat').value='';}
 function acatSil(k){if(!confirm(`"${k}" sil?`))return;D.akat=D.akat.filter(x=>x!==k);save();renderAcatTags();buildSelects();}
