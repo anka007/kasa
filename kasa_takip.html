@@ -1891,11 +1891,11 @@ function rvYap(){
   const label=`${modalRV.hiz}${modalRV.plat?' · ['+modalRV.plat+']':''} · ${modalRV.sure} dk · ${modalRV.isim}`;
   if(rvSelOd==='pos'){
     const cekStr=document.getElementById('rv-poscek').value;
-    const cek=parseFloat(cekStr)||0;
+    const cek=parseFloat(cekStr)||tutar;
     const oran=parseFloat(document.getElementById('rv-posoran').value)||D.par.posOran;
     const kom=cek>0?+(cek*oran/100).toFixed(2):0;
-    const netTutar=cek>0?+(cek-kom).toFixed(2):tutar;
-    D.isl.unshift({id:Date.now(),tip:'pos',tutar:netTutar,tarih,not:label,gkasa:'pos'});
+    // Brüt tutar kasaya GİRER, komisyon ertesi gün ayrı GİDER olarak POS'tan düşer
+    D.isl.unshift({id:Date.now(),tip:'pos',tutar:cek,tarih,not:label,gkasa:'pos'});
     if(kom>0){
       D.isl.unshift({id:Date.now()+1,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos'});
     }
