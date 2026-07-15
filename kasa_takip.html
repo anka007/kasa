@@ -242,6 +242,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <button class="nt" onclick="goP('islemler')" data-perm="kasa_gor" data-i18n="nav_islemler">İşlemler</button>
     <button class="nt" onclick="goP('giderler')" data-perm="gider_ekle" data-i18n="nav_giderler">Giderler</button>
     <button class="nt" onclick="goP('seanslar')" data-perm="randevu_gor" data-i18n="nav_seanslar">Seanslar</button>
+    <button class="nt" onclick="goP('biglion')" data-perm="randevu_gor">🎟️ Biglion</button>
     <button class="nt" onclick="goP('musteriler')" data-perm="randevu_gor" data-i18n="nav_musteriler">Müşteriler</button>
     <button class="nt" onclick="goP('param')" data-perm="param_duzenle" data-i18n="nav_param">Param.</button>
     <button class="nt" onclick="goP('ozet')" data-perm="rapor_gor" data-i18n="nav_ozet">Özet</button>
@@ -496,6 +497,20 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   <div id="s-liste"></div>
 </div></div>
 
+<!-- ===== BIGLION KUPONLARI ===== -->
+<div class="page" id="page-biglion"><div class="main">
+  <div class="fc">
+    <div class="ftl">🎟️ Yeni Biglion Kuponu</div>
+    <div style="font-size:12px;color:var(--mu);margin-bottom:10px;">Müşteri kupon aktive ettiğinde buraya ekle. Biglion 15-20 gün sonra komisyonunu düşüp kalan tutarı POS kasana yatırınca "Ödeme Geldi" ile kapat.</div>
+    <div class="r2"><div class="ig"><label>Müşteri Adı</label><input type="text" id="big-isim" placeholder="Ad Soyad"></div><div class="ig" style="max-width:100px;"><label>Kaç Seans</label><input type="number" id="big-seans" value="1" min="1"></div></div>
+    <div class="r2"><div class="ig"><label>Kupon Tutarı (₽, bilgi amaçlı)</label><input type="number" id="big-tutar" placeholder="0" step="0.01"></div><div class="ig" style="max-width:128px;"><label>Aktivasyon Tarihi</label><input type="date" id="big-tarih"></div></div>
+    <button class="btnm" onclick="ekleBiglion()">Kuponu Kaydet →</button>
+  </div>
+  <div class="shdr"><span class="shdr-lbl">Kuponlar</span></div>
+  <div id="big-liste"></div>
+</div></div>
+
+
 <!-- ===== MÜŞTERİLER ===== -->
 <div class="page" id="page-musteriler"><div class="main">
   <div class="fc">
@@ -530,6 +545,15 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     </div>
     <div id="fb-status" style="font-size:11px;margin-top:8px;text-align:center;"></div>
     <div id="fb-user-info" style="font-size:11px;color:var(--mu);margin-top:6px;text-align:center;"></div>
+  </div>
+  <div class="fc" style="border-color:rgba(105,219,124,.3);background:rgba(105,219,124,.04);">
+    <div class="ftl" style="color:var(--gr);">💾 Yedek Al / Geri Yükle</div>
+    <div style="font-size:12px;color:var(--mu);margin-bottom:10px;">Tüm verilerinizi (işlemler, seanslar, kuponlar, ayarlar) bir dosyaya indirin. Sorun çıkarsa veya cihaz değiştirirseniz bu dosyadan geri yükleyebilirsiniz.</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btnm" style="background:rgba(105,219,124,.15);color:var(--gr);border:1px solid rgba(105,219,124,.3);flex:1;" onclick="yedekAl()">⬇️ Yedek Al (İndir)</button>
+      <button class="btnm" style="background:var(--sf2);color:var(--tx);border:1px solid var(--bd);flex:1;" onclick="document.getElementById('yedek-file').click()">⬆️ Geri Yükle</button>
+    </div>
+    <input type="file" id="yedek-file" accept="application/json,.json" style="display:none;" onchange="yedekGeriYukle(this)">
   </div>
   <div class="fc" style="border-color:rgba(255,212,59,.3);background:rgba(255,212,59,.04);">
     <div class="ftl" style="color:var(--warn);" data-i18n="ftl_veri_onarim">🔧 Veri Onarımı</div>
@@ -749,6 +773,7 @@ let D = {
   tatiller:      loadStorage('kt3_tat',  []),
   gelirKaynaklar:loadStorage('kt3_gkay', ['Yurt Dışı Getiri','Eşten Alınan','Dış Kaynak / Diğer']),
   musteri: loadStorage('kt3_mus', []),
+  biglion: loadStorage('kt3_big', []),
   dil: loadStorage('kt3_dil', 'tr')
 };
 // Güvenlik: eksik alanları tamamla
@@ -758,6 +783,7 @@ if(!D.tatiller) D.tatiller=[];
 if(!D.gelirKaynaklar) D.gelirKaynaklar=['Yurt Dışı Getiri','Eşten Alınan','Dış Kaynak / Diğer'];
 if(!D.gelirKaynaklar.includes('Diğer Gelir')) D.gelirKaynaklar.push('Diğer Gelir');
 if(!D.musteri) D.musteri=[];
+if(!D.biglion) D.biglion=[];
 if(!D.akat.includes('Araba')){ D.akat.push('Araba'); if(!D.alkat.Araba) D.alkat.Araba=['Yıkama','Sigorta','Bakım']; }
 
 function saveLocal(){
@@ -773,6 +799,7 @@ function saveLocal(){
   localStorage.setItem('kt3_tat',    JSON.stringify(D.tatiller));
   localStorage.setItem('kt3_gkay',   JSON.stringify(D.gelirKaynaklar));
   localStorage.setItem('kt3_mus',    JSON.stringify(D.musteri));
+  localStorage.setItem('kt3_big',    JSON.stringify(D.biglion));
   localStorage.setItem('kt3_dil',    JSON.stringify(D.dil));
 }
 
@@ -837,6 +864,79 @@ function isleriSifirla(){
   alert('İşlemler sıfırlandı.');
 }
 
+// ===================== YEDEK AL / GERİ YÜKLE =====================
+function yedekAl(){
+  const yedek={
+    versiyon:1,
+    olusturmaTarihi:new Date().toISOString(),
+    data:{
+      isl:D.isl, sea:D.sea, rv:D.rv, hiz:D.hiz, plat:D.plat,
+      akat:D.akat, alkat:D.alkat, par:D.par, calisma:D.calisma,
+      tatiller:D.tatiller, gelirKaynaklar:D.gelirKaynaklar,
+      musteri:D.musteri, biglion:D.biglion, dil:D.dil
+    }
+  };
+  const blob=new Blob([JSON.stringify(yedek,null,1)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='kasa_yedek_'+today()+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function yedekGeriYukle(input){
+  const file=input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    let parsed;
+    try{
+      parsed=JSON.parse(e.target.result);
+    }catch(err){
+      alert('Dosya okunamadı — geçerli bir yedek dosyası (.json) seçtiğinizden emin olun.');
+      input.value='';
+      return;
+    }
+    const data=parsed.data||parsed;
+    if(!data || !Array.isArray(data.isl)){
+      alert('Bu dosya geçerli bir Kasa Takip yedeği gibi görünmüyor.');
+      input.value='';
+      return;
+    }
+    const ozet=(data.isl?.length||0)+' işlem, '+(data.sea?.length||0)+' seans, '+(data.biglion?.length||0)+' biglion kuponu';
+    if(!confirm('Mevcut TÜM veriler silinip yedekteki verilerle değiştirilecek (bu dosyadaki tarih: '+(parsed.olusturmaTarihi?fd(parsed.olusturmaTarihi.slice(0,10)):'bilinmiyor')+').\n\nYedekte: '+ozet+'\n\nDevam edilsin mi?')){
+      input.value='';
+      return;
+    }
+    D.isl=data.isl||[];
+    D.sea=data.sea||[];
+    D.rv=data.rv||[];
+    D.hiz=data.hiz||D.hiz;
+    D.plat=data.plat||D.plat;
+    D.akat=data.akat||D.akat;
+    D.alkat=data.alkat||D.alkat;
+    D.par=data.par||D.par;
+    D.calisma=data.calisma||D.calisma;
+    D.tatiller=data.tatiller||[];
+    D.gelirKaynaklar=data.gelirKaynaklar||D.gelirKaynaklar;
+    D.musteri=data.musteri||[];
+    D.biglion=data.biglion||[];
+    D.dil=data.dil||D.dil;
+    save();
+    renderAll();
+    input.value='';
+    alert('✅ Yedek başarıyla geri yüklendi: '+ozet);
+    goP('ana');
+  };
+  reader.onerror=function(){
+    alert('Dosya okunurken bir hata oluştu.');
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
 // form state
 let F={tur:null,odeme:null,anakat:null,gkasa:null};
 let aktifFltI='hepsi', aktifGKat='hepsi';
@@ -853,12 +953,13 @@ function goP(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.nt').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
-  const ts=['ana','randevu','takvim','islemler','giderler','seanslar','musteriler','param','ozet','kullanicilar','aktar'];
+  const ts=['ana','randevu','takvim','islemler','giderler','seanslar','biglion','musteriler','param','ozet','kullanicilar','aktar'];
   const idx=ts.indexOf(p);
   if(idx>=0 && document.querySelectorAll('.nt')[idx]) document.querySelectorAll('.nt')[idx].classList.add('on');
   if(p==='islemler'){initIT();renderTumI();}
   if(p==='giderler'){initGT();renderG();}
   if(p==='seanslar'){renderS();sOdChange();}
+  if(p==='biglion'){renderBiglion();}
   if(p==='musteriler'){renderMusteriler();}
   if(p==='param'){renderParam();}
   if(p==='randevu'){renderRV();}
@@ -882,7 +983,7 @@ const TUM_IZINLER = {
 // Sayfa -> gerekli izin eşlemesi (admin her zaman erişir)
 const SAYFA_IZIN = {
   ana:'islem_ekle', randevu:'randevu_gor', takvim:'randevu_gor',
-  islemler:'kasa_gor', giderler:'gider_ekle', seanslar:'randevu_gor',
+  islemler:'kasa_gor', giderler:'gider_ekle', seanslar:'randevu_gor', biglion:'randevu_gor',
   musteriler:'randevu_gor',
   param:'param_duzenle', ozet:'rapor_gor', kullanicilar:'kullanici_yonet'
 };
@@ -2189,6 +2290,94 @@ function kullanS(){
   save();closeSM();renderS();renderBugunRV();if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
 }
 function silS(id){if(!confirm('Sil?'))return;D.sea=D.sea.filter(s=>s.id!==id);save();renderS();}
+
+// ===================== BIGLION KUPONLARI =====================
+let bigSecili=new Set();
+function ekleBiglion(){
+  const isim=document.getElementById('big-isim').value.trim();
+  const seans=parseInt(document.getElementById('big-seans').value)||1;
+  const tutar=parseFloat(document.getElementById('big-tutar').value)||0;
+  const tarih=document.getElementById('big-tarih').value||today();
+  if(!isim){alert('Müşteri adı girin.');return;}
+  D.biglion.unshift({
+    id:Date.now(), isim, toplamSeans:seans, yapilanSeans:0,
+    kuponTutari:tutar, tarih, odemeDurumu:'bekliyor', odemeTarihi:null, odenenTutar:null, odemeNotu:null
+  });
+  save();
+  document.getElementById('big-isim').value='';
+  document.getElementById('big-seans').value=1;
+  document.getElementById('big-tutar').value='';
+  document.getElementById('big-tarih').value=today();
+  renderBiglion();
+}
+function biglionSecimToggle(id){
+  if(bigSecili.has(id)) bigSecili.delete(id); else bigSecili.add(id);
+  renderBiglion();
+}
+function renderBiglion(){
+  const el=document.getElementById('big-liste');
+  if(!document.getElementById('big-tarih').value) document.getElementById('big-tarih').value=today();
+  // Artık var olmayan kuponları seçimden temizle
+  bigSecili.forEach(id=>{ if(!D.biglion.find(b=>b.id===id)) bigSecili.delete(id); });
+  if(!D.biglion.length){el.innerHTML='<div class="empty">Henüz kupon yok.</div>';return;}
+  const bekleyen=D.biglion.filter(b=>b.odemeDurumu==='bekliyor').length;
+  let html=`<div style="font-size:12px;color:var(--mu);margin:0 14px 10px;">Toplam ${D.biglion.length} kupon · ${bekleyen} tanesi ödeme bekliyor</div>`;
+
+  if(bigSecili.size>0){
+    const secilenler=D.biglion.filter(b=>bigSecili.has(b.id));
+    const kuponToplam=secilenler.reduce((s,b)=>s+(b.kuponTutari||0),0);
+    html+=`<div class="fc" style="border-color:rgba(105,219,124,.35);background:rgba(105,219,124,.06);margin:0 14px 12px;">
+      <div class="ftl" style="color:var(--gr);">💰 Toplu Ödeme Kaydet</div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:8px;">${secilenler.length} kupon seçili: ${secilenler.map(b=>esc(b.isim)).join(', ')}${kuponToplam?' · Kupon tutarları toplamı (bilgi): '+para(kuponToplam):''}</div>
+      <div class="r2"><div class="ig"><label>Banka Hesabına Yatan Toplam Net Tutar (₽)</label><input type="number" id="big-toplu-net" placeholder="0" step="0.01"></div><div class="ig" style="max-width:128px;"><label>Ödeme Tarihi</label><input type="date" id="big-toplu-tarih" value="${today()}"></div></div>
+      <button class="btnm" onclick="biglionTopluOdemeKaydet()">Bu ${secilenler.length} Kuponu Kapat →</button>
+      <button class="btnm" style="background:var(--sf2);color:var(--mu);border:1px solid var(--bd);margin-top:6px;" onclick="bigSecili.clear();renderBiglion();">Seçimi Temizle</button>
+    </div>`;
+  }
+
+  const l=[...D.biglion.filter(b=>b.odemeDurumu==='bekliyor'),...D.biglion.filter(b=>b.odemeDurumu==='odendi')];
+  html+=l.map(b=>{
+    const bitti=b.yapilanSeans>=b.toplamSeans;
+    const odendi=b.odemeDurumu==='odendi';
+    const pct=Math.round(b.yapilanSeans/b.toplamSeans*100);
+    const secildi=bigSecili.has(b.id);
+    return `<div class="sc ${odendi?'sc-done':''}" style="${secildi?'outline:2px solid var(--gr);':''}">
+      <div class="sc-hdr">${!odendi?`<input type="checkbox" onchange="biglionSecimToggle(${b.id})" ${secildi?'checked':''} style="width:18px;height:18px;margin-right:8px;margin-top:3px;flex-shrink:0;">`:''}<div><div class="sisim">${esc(b.isim)}${odendi?' <span style="font-size:10px;color:var(--gr);font-weight:600;">· ÖDENDİ</span>':' <span style="font-size:10px;color:var(--warn);font-weight:600;">· ÖDEME BEKLİYOR</span>'}</div>
+      <div class="smeta">${fd(b.tarih)}${b.kuponTutari?' · Kupon: '+para(b.kuponTutari):''}${odendi?' · '+(b.odemeNotu?esc(b.odemeNotu):('Yatan: '+para(b.odenenTutar)))+' ('+fd(b.odemeTarihi)+')':''}</div></div>
+      <div class="skl ${bitti?'ok':'w'}">${b.yapilanSeans}/${b.toplamSeans}<br><span style="font-size:9px;font-weight:400;">seans</span></div></div>
+      <div class="sbar"><div class="sbf" style="width:${pct}%;background:${bitti?'var(--ac2)':'var(--warn)'}"></div></div>
+      <div class="sinf"><span>${b.yapilanSeans} yapıldı</span><span>${b.toplamSeans-b.yapilanSeans} kaldı</span></div>
+      <div class="sact">
+        ${!bitti?`<button class="btn-sy" onclick="biglionSeansYap(${b.id})">✓ +1 Seans Yapıldı</button>`:''}
+        <button class="btn-sd" onclick="biglionSil(${b.id})">Sil</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=html;
+}
+function biglionSeansYap(id){
+  const b=D.biglion.find(x=>x.id===id);if(!b)return;
+  if(b.yapilanSeans<b.toplamSeans) b.yapilanSeans++;
+  save();renderBiglion();
+}
+function biglionTopluOdemeKaydet(){
+  const secilenler=D.biglion.filter(b=>bigSecili.has(b.id));
+  if(!secilenler.length){alert('Önce en az bir kupon seçin.');return;}
+  const net=parseFloat(document.getElementById('big-toplu-net').value);
+  const tarih=document.getElementById('big-toplu-tarih').value||today();
+  if(!net||net<=0){alert('Yatan net tutarı girin.');return;}
+  const isimler=secilenler.map(b=>b.isim).join(', ');
+  D.isl.unshift({id:Date.now(),tip:'pos',tutar:net,tarih,not:`Biglion toplu ödeme – ${secilenler.length} kupon (${isimler})`,gkasa:'pos'});
+  D.isl.sort((a,b2)=>b2.tarih.localeCompare(a.tarih)||b2.id-a.id);
+  const not_=secilenler.length>1?`Toplu ödemenin parçası: ${para(net)} / ${secilenler.length} kupon birlikte`:`Yatan: ${para(net)}`;
+  secilenler.forEach(b=>{
+    b.odemeDurumu='odendi'; b.odemeTarihi=tarih; b.odenenTutar=secilenler.length===1?net:null; b.odemeNotu=not_;
+  });
+  bigSecili.clear();
+  save();renderBiglion();renderKasalar();
+}
+function biglionSil(id){if(!confirm('Bu kuponu silmek istiyor musun?'))return;bigSecili.delete(id);D.biglion=D.biglion.filter(b=>b.id!==id);save();renderBiglion();}
+
 
 // ===================== PARAMETRELER =====================
 // ===================== ÇALIŞMA / TATİL =====================
