@@ -418,6 +418,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     </div>
     <div class="cal-grid" id="cal-grid"></div>
   </div>
+  <div class="fc" id="cal-ay-ozet"></div>
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--mu);">
     <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,107,107,.2);margin-right:4px;"></span>Tatil/Kapalı</span>
     <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ac2);margin-right:4px;"></span>Randevu var</span>
@@ -979,7 +980,7 @@ function goP(p){
   if(p==='biglion'){renderBiglion();}
   if(p==='musteriler'){renderMusteriler();}
   if(p==='param'){renderParam();}
-  if(p==='randevu'){renderRV();}
+  if(p==='randevu'){buildPaketSelect();renderRV();}
   if(p==='takvim'){renderCal();}
   if(p==='ozet'){ozPer('ay');}
   if(p==='kullanicilar'){renderKullanicilar();}
@@ -1096,8 +1097,9 @@ function kasaDokum(){
   });
   return d;
 }
-function paraS(v){return (v<0?'-':'')+para(v);}
+function paraS(v){v=Math.round((v+Number.EPSILON)*100)/100; if(v===0) v=0; return (v<0?'-':'')+para(v);}
 function setKasaAmt(id,v){
+  v=Math.round((v+Number.EPSILON)*100)/100; if(v===0) v=0;
   const el=document.getElementById(id);
   el.textContent=paraS(v);
   el.style.color=v<0?'var(--err)':'';
@@ -2121,7 +2123,40 @@ function renderCal(){
     html+=`<div class="cal-day ${isToday?'today':''} ${isSel?'selected':''} ${hasRV?'has-rv':''} ${extraClass}" onclick="calSelGun('${t}')">${d}</div>`;
   }
   el.innerHTML=html;
+  renderCalAyOzet();
   renderCalDet(calSelDay||bug);
+}
+function renderCalAyOzet(){
+  const el=document.getElementById('cal-ay-ozet');if(!el)return;
+  const ayBas=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  const sonGun=new Date(calYear,calMonth+1,0).getDate();
+  const ayBit=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(sonGun).padStart(2,'0')}`;
+  const l=D.isl.filter(x=>x.tarih>=ayBas&&x.tarih<=ayBit&&x.tip!=='virman'&&x.tip!=='gider');
+  const calisilanGunler=new Set();
+  let masajKazanc=0,digerGelir=0,posG=0,nfG=0,nfsG=0,birG=0;
+  l.forEach(x=>{
+    if(x.tip==='yurt'){digerGelir+=x.tutar;return;}
+    calisilanGunler.add(x.tarih);
+    masajKazanc+=x.tutar;
+    if(x.tip==='pos')posG+=x.tutar;
+    else if(x.tip==='nf')nfG+=x.tutar;
+    else if(x.tip==='nfs')nfsG+=x.tutar;
+    else if(x.tip==='bir')birG+=x.tutar;
+  });
+  const toplam=masajKazanc+digerGelir;
+  const vergiliKazanc=posG+nfG; // Fişli — vergiye giren
+  const vergisizKazanc=nfsG+birG; // Fişsiz — vergisiz
+  el.innerHTML=`
+    <div class="ftl">📊 Aylık Özet</div>
+    <div class="stat-grid">
+      <div class="stat-c"><div class="stat-l">Çalışılan Gün</div><div class="stat-v" style="color:var(--ac)">${calisilanGunler.size}</div></div>
+      <div class="stat-c"><div class="stat-l">Toplam Kazanç</div><div class="stat-v" style="color:var(--gr)">${para(toplam)}</div></div>
+    </div>
+    <div class="rr"><div class="rl"><div class="rdot" style="background:var(--gr)"></div>💆 Masajdan</div><div class="rv2" style="color:var(--gr)">${para(masajKazanc)}</div></div>
+    <div class="rr"><div class="rl"><div class="rdot" style="background:var(--warn)"></div>🌍 Diğer Gelirden</div><div class="rv2" style="color:var(--warn)">${para(digerGelir)}</div></div>
+    <div class="rr"><div class="rl"><div class="rdot" style="background:var(--tx)"></div>🧾 Fişli (Vergiye Giren)</div><div class="rv2">${para(vergiliKazanc)}</div></div>
+    <div class="rr" style="border-bottom:none;"><div class="rl"><div class="rdot" style="background:var(--ac2)"></div>💵 Fişsiz (Vergisiz)</div><div class="rv2" style="color:var(--ac2)">${para(vergisizKazanc)}</div></div>
+  `;
 }
 function calNav(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCal();}
 function calSelGun(t){calSelDay=t;renderCal();}
@@ -2453,7 +2488,7 @@ function renderBiglion(){
     const odendi=b.odemeDurumu==='odendi';
     const pct=Math.round(b.yapilanSeans/b.toplamSeans*100);
     const secildi=bigSecili.has(b.id);
-    return `<div class="sc ${odendi?'sc-done':''}" style="${secildi?'outline:2px solid var(--gr);':''}">
+    return `<div class="sc ${bitti?'sc-done':''}" style="${secildi?'outline:2px solid var(--gr);':''}">
       <div class="sc-hdr">${!odendi?`<input type="checkbox" onchange="biglionSecimToggle(${b.id})" ${secildi?'checked':''} style="width:18px;height:18px;margin-right:8px;margin-top:3px;flex-shrink:0;">`:''}<div><div class="sisim">${esc(b.isim)}${odendi?' <span style="font-size:10px;color:var(--gr);font-weight:600;">· ÖDENDİ</span>':' <span style="font-size:10px;color:var(--warn);font-weight:600;">· ÖDEME BEKLİYOR</span>'}</div>
       <div class="smeta">${fd(b.tarih)}${b.kuponTutari?' · Kupon: '+para(b.kuponTutari):''}${odendi?' · '+(b.odemeNotu?esc(b.odemeNotu):('Yatan: '+para(b.odenenTutar)))+' ('+fd(b.odemeTarihi)+')':''}</div></div>
       <div class="skl ${bitti?'ok':'w'}">${b.yapilanSeans}/${b.toplamSeans}<br><span style="font-size:9px;font-weight:400;">seans</span></div></div>
@@ -2956,7 +2991,7 @@ function renderOzet(){
   const netKalan=topKazanc-topGider;
 
   const gc={};
-  l.filter(x=>x.tip==='gider').forEach(x=>{const k=x.gkat||'Diğer';gc[k]=(gc[k]||0)+x.tutar;});
+  l.filter(x=>x.tip==='gider').forEach(x=>{const k=x.anaKat||'Diğer';gc[k]=(gc[k]||0)+x.tutar;});
   const gRows=Object.keys(gc).sort((a,b)=>gc[b]-gc[a]).map(k=>`<div class="rr" style="padding:6px 0;"><div class="rl" style="font-size:11px;padding-left:12px;"><div class="rdot" style="background:var(--err);opacity:.5;"></div>${k}</div><div class="rv2" style="color:var(--err);font-size:11px;">-${para(gc[k])}</div></div>`).join('');
 
   document.getElementById('ozet-icerik').innerHTML=`
