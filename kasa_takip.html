@@ -2136,8 +2136,14 @@ function renderCalDet(tarih){
   const gunMasajSayisi=rvsGun.length;
   const paketliSayisi=rvsGun.filter(r=>r.seansId||r.biglionId).length;
   const gunKazanc=rvsGun.reduce((s,r)=>s+((r.seansId||r.biglionId)?0:(r.fiyat||0)),0);
+  // Randevuya bağlı olmayan diğer gelirler (Biglion toplu ödemesi, yeni paket satışı vb.) — kasaya giren toplamdan randevu kazancı düşülerek bulunur
+  const gunIslToplam=D.isl.filter(x=>x.tarih===tarih&&['pos','nf','nfs','bir','yurt'].includes(x.tip)).reduce((s,x)=>s+x.tutar,0);
+  const digerGelir=Math.max(0,+(gunIslToplam-gunKazanc).toFixed(2));
   const gunOzetHtml=gunMasajSayisi
-    ? `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);">💆 ${gunMasajSayisi} masaj${paketliSayisi?` (${paketliSayisi} paket/kupondan)`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gr);">${para(gunKazanc)}${paketliSayisi?' alındı':''}</div></div></div>`
+    ? `<div class="fc" style="padding:11px 14px;margin-bottom:9px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);">💆 ${gunMasajSayisi} masaj${paketliSayisi?` (${paketliSayisi} paket/kupondan)`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gr);">${para(gunKazanc)}${paketliSayisi?' alındı':''}</div></div>
+        ${digerGelir>0?`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid var(--bd);"><div style="font-size:11px;color:var(--mu);">💰 Diğer gelir (Biglion ödemesi, paket satışı vb.)</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ac2);">${para(digerGelir)}</div></div>`:''}
+      </div>`
     : `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="font-size:12px;color:var(--mu);">💆 Bu gün masaj kaydı yok</div></div>`;
 
   // Kapalı gün kontrolü
