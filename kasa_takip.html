@@ -543,6 +543,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
       <button class="btnm" onclick="fbConfigKaydet()" style="flex:1;" data-i18n="btn_firebase_bagla">Firebase Bağla</button>
       <button class="btns" onclick="cikisYap()" data-i18n="btn_cikis">Çıkış Yap</button>
     </div>
+    <button class="btns" style="width:100%;margin-top:7px;" onclick="pendingSave=true;cloudSaveAll();">🔄 Şimdi Senkronize Et (verimi buluta gönder)</button>
     <div id="fb-status" style="font-size:11px;margin-top:8px;text-align:center;"></div>
     <div id="fb-user-info" style="font-size:11px;color:var(--mu);margin-top:6px;text-align:center;"></div>
   </div>
@@ -3231,6 +3232,7 @@ async function cloudSaveAll(){
     {id:'tat',  data: D.tatiller},
     {id:'gkay', data: D.gelirKaynaklar},
     {id:'mus',  data: D.musteri},
+    {id:'big',  data: D.biglion},
   ];
   chunks.forEach(c => {
     const ref = col.doc(ownerUid + '_' + c.id);
@@ -3260,8 +3262,8 @@ async function cloudLoadAll(){
   if(pendingSave) return; // henüz sunucuya yazılmamış yerel değişiklik var — üzerine yazma
   showSync('⏬ Yükleniyor...', '#ffd43b');
   const ownerUid = window._ownerUid || currentUser.uid;
-  const keys = ['isl','sea','rv','hiz','plat','akat','alkat','par','cal','tat','gkay','mus'];
-  const fieldMap = {isl:'isl',sea:'sea',rv:'rv',hiz:'hiz',plat:'plat',akat:'akat',alkat:'alkat',par:'par',cal:'calisma',tat:'tatiller',gkay:'gelirKaynaklar',mus:'musteri'};
+  const keys = ['isl','sea','rv','hiz','plat','akat','alkat','par','cal','tat','gkay','mus','big'];
+  const fieldMap = {isl:'isl',sea:'sea',rv:'rv',hiz:'hiz',plat:'plat',akat:'akat',alkat:'alkat',par:'par',cal:'calisma',tat:'tatiller',gkay:'gelirKaynaklar',mus:'musteri',big:'biglion'};
   try {
     const promises = keys.map(k => db.collection('kasalar').doc(ownerUid+'_'+k).get());
     const docs = await Promise.all(promises);
