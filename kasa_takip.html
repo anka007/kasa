@@ -2096,7 +2096,38 @@ function kaydetRVE(){
   D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
   save();closeRVE();renderRV();renderBugunRV();renderCal();
 }
-function silRV(id){if(!confirm('Randevuyu sil?'))return;D.rv=D.rv.filter(r=>r.id!==id);save();renderRV();renderBugunRV();renderCal();}
+function silRV(id){
+  const r=D.rv.find(x=>x.id===id);if(!r)return;
+  if(!confirm('Randevuyu sil?'))return;
+  // Eğer bu randevu "Yapıldı" olarak işaretlenmiş ve bir seans paketi/Biglion kuponundan düşülmüşse,
+  // silindiğinde kalan seans/kupon hakkını geri ekle.
+  if(r.yapildi&&r.seansId){
+    const s=D.sea.find(x=>x.id===r.seansId);
+    if(s){
+      const dec=+((parseInt(r.sure)||60)/60).toFixed(2);
+      s.kalan=+(Math.min(s.toplam,(s.kalan||0)+dec)).toFixed(2);
+      if(s.log&&s.log.length){
+        for(let i=s.log.length-1;i>=0;i--){
+          if(s.log[i].tarih===r.tarih){ s.log.splice(i,1); break; }
+        }
+      }
+    }
+  } else if(r.yapildi&&r.biglionId){
+    const b=D.biglion.find(x=>x.id===r.biglionId);
+    if(b){
+      b.yapilanSeans=Math.max(0,(b.yapilanSeans||0)-1);
+      if(b.log&&b.log.length){
+        for(let i=b.log.length-1;i>=0;i--){
+          if(b.log[i].tarih===r.tarih){ b.log.splice(i,1); break; }
+        }
+      }
+    }
+  }
+  D.rv=D.rv.filter(x=>x.id!==id);
+  save();renderRV();renderBugunRV();renderCal();
+  if(document.getElementById('page-seanslar').classList.contains('on'))renderS();
+  if(document.getElementById('page-biglion')&&document.getElementById('page-biglion').classList.contains('on'))renderBiglion();
+}
 
 // ===================== TAKVİM =====================
 function renderCal(){
