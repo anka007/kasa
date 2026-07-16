@@ -736,6 +736,21 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   <div class="mact"><button class="btnm" style="flex:1;" onclick="rvYap()" data-i18n="btn_islem_gerceklestir">✓ İşlemi Gerçekleştir</button><button class="btns" onclick="closeRVM()" data-i18n="btn_iptal">İptal</button></div>
 </div></div>
 
+<!-- RANDEVU DÜZENLE MODAL -->
+<div class="mov h" id="rve-ov">
+<div class="modal">
+  <div class="mtl">Randevuyu Düzenle</div>
+  <div style="background:var(--sf2);border-radius:9px;padding:9px 11px;margin-bottom:12px;font-size:12px;color:var(--mu);" id="rve-isim"></div>
+  <div class="r2">
+    <div class="ig"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="rve-tarih"></div>
+    <div class="ig"><label data-i18n="saat_lbl">Saat</label><input type="time" id="rve-saat"></div>
+  </div>
+  <div class="ig"><label data-i18n="sure_dakika">Süre (dakika)</label><input type="number" id="rve-sure" min="1"></div>
+  <div class="ig"><label data-i18n="not_ist">Not (isteğe bağlı)</label><input type="text" id="rve-not"></div>
+  <div class="rv-warn" id="rve-warn-box"></div>
+  <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetRVE()">✓ Kaydet</button><button class="btns" onclick="closeRVE()" data-i18n="btn_iptal">İptal</button></div>
+</div></div>
+
 <script>
 // ===================== VERİ =====================
 function loadStorage(key, defaultValue){
@@ -784,6 +799,7 @@ if(!D.gelirKaynaklar) D.gelirKaynaklar=['Yurt Dışı Getiri','Eşten Alınan','
 if(!D.gelirKaynaklar.includes('Diğer Gelir')) D.gelirKaynaklar.push('Diğer Gelir');
 if(!D.musteri) D.musteri=[];
 if(!D.biglion) D.biglion=[];
+D.biglion.forEach(b=>{ if(!b.log) b.log=[]; });
 if(!D.akat.includes('Araba')){ D.akat.push('Araba'); if(!D.alkat.Araba) D.alkat.Araba=['Yıkama','Sigorta','Bakım']; }
 
 function saveLocal(){
@@ -1834,18 +1850,8 @@ function ekleRV(){
     document.getElementById('rv-warn-box').classList.add('on'); return;
   }
 
-  // Seansı bitmiş kişi kontrolü — paket seçilmediyse ve isim bitmiş bir pakete tam eşleşiyorsa engelle
-  if(!paketId){
-    const isimAlt=isim.toLowerCase();
-    const aktifPaket=D.sea.find(s=>s.isim.trim().toLowerCase()===isimAlt&&s.kalan>0);
-    const bitmisPaket=D.sea.find(s=>s.isim.trim().toLowerCase()===isimAlt&&s.kalan<=0);
-    if(bitmisPaket&&!aktifPaket){
-      const warnEl=document.getElementById('rv-warn-box');
-      warnEl.textContent=`🚫 ${bitmisPaket.isim} adlı kişinin seans paketi tamamlandı. Yeni randevu için önce Seanslar sayfasından yeni paket açın.`;
-      warnEl.classList.add('on');
-      return;
-    }
-  }
+  // Seansı bitmiş kişi için bilgilendirme — artık ENGELLEMİYOR, sadece normal randevu olarak devam ediyor
+  // (paket dışı yeni bir randevu her zaman girilebilir; ödeme normal randevu gibi alınır)
 
   // Çakışma kontrolü — çakışırsa KESİNLİKLE engelle
   const baslangic=rvToMinutes(saat);
@@ -1863,14 +1869,23 @@ function ekleRV(){
     return; // KESİN ENGELLE
   }
 
-  D.rv.unshift({id:Date.now(),isim,saat,tarih,hiz,plat,sure,sureLabel:sure+' dk',fiyat,not,yapildi:false,seansId:null});
-  // Link to seans: dropdown seçimi öncelikli, yoksa seans kartından gelen eski yöntem
+  D.rv.unshift({id:Date.now(),isim,saat,tarih,hiz,plat,sure,sureLabel:sure+' dk',fiyat,not,yapildi:false,seansId:null,biglionId:null});
+  // Link to seans/biglion: dropdown seçimi öncelikli, yoksa seans kartından gelen eski yöntem
   if(paketId){
-    const s=D.sea.find(x=>String(x.id)===paketId&&x.kalan>0);
-    if(s){
-      D.rv[0].seansId=s.id;
-      D.rv[0].fiyat=0;
-      if(!not) D.rv[0].not='Seans paketi kullanımı';
+    if(paketId.startsWith('b_')){
+      const b=D.biglion.find(x=>String(x.id)===paketId.slice(2)&&x.yapilanSeans<x.toplamSeans);
+      if(b){
+        D.rv[0].biglionId=b.id;
+        D.rv[0].fiyat=0;
+        if(!not) D.rv[0].not='Biglion kuponu kullanımı';
+      }
+    } else {
+      const s=D.sea.find(x=>String(x.id)===paketId&&x.kalan>0);
+      if(s){
+        D.rv[0].seansId=s.id;
+        D.rv[0].fiyat=0;
+        if(!not) D.rv[0].not='Seans paketi kullanımı';
+      }
     }
   } else if(window._seansIdForRV){
     D.rv[0].seansId=window._seansIdForRV;
@@ -1895,9 +1910,9 @@ function renderRV(){
     return`<div style="font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;padding:6px 0 4px;">${fd(t)}${isTod?'<span class="tchip">Bugün</span>':''}</div>`
       +g[t].map(r=>`<div class="rv-card ${r.yapildi?'rv-done':''}">
         <div class="rv-hdr"><div><div class="rv-isim">${r.isim}</div><div class="rv-det">${r.hiz}${r.plat?' · '+r.plat:''} · ${r.sure} dk</div></div><div class="rv-saat">${r.saat}</div></div>
-        ${r.seansId?'<div style="font-size:10px;color:var(--ac2);margin-top:2px;">📦 Seans paketinden</div>':''}
+        ${r.biglionId?'<div style="font-size:10px;color:var(--ac2);margin-top:2px;">🎟️ Biglion kuponundan</div>':r.seansId?'<div style="font-size:10px;color:var(--ac2);margin-top:2px;">📦 Seans paketinden</div>':''}
         ${r.fiyat&&!r.seansId?`<div class="rv-fiyat">${para(r.fiyat)}</div>`:''}
-        <div class="rv-act">${!r.yapildi?`<button class="btn-ry" onclick="openRVM(${r.id})">✓ Yapıldı</button>`:'<span style="font-size:11px;color:var(--mu);">✓ Tamamlandı</span>'}
+        <div class="rv-act">${!r.yapildi?`<button class="btn-ry" onclick="openRVM(${r.id})">✓ Yapıldı</button><button class="btn-rd" style="color:var(--ac);" onclick="openRVE(${r.id})">✏️ Düzenle</button>`:'<span style="font-size:11px;color:var(--mu);">✓ Tamamlandı</span>'}
         <button class="btn-rd" onclick="silRV(${r.id})">Sil</button></div>
       </div>`).join('');
   }).join('');
@@ -1913,7 +1928,7 @@ function renderBugunRV(){
     ${brvs.map(r=>`<div style="background:var(--sf2);border-radius:9px;padding:10px;margin-bottom:7px;">
       <div class="rv-hdr"><div><div class="rv-isim">${r.isim}</div><div class="rv-det">${r.hiz}${r.plat?' · ['+r.plat+']':''} · ${r.sure} dk</div></div><div class="rv-saat">${r.saat}</div></div>
       ${r.fiyat?`<div class="rv-fiyat">${para(r.fiyat)}</div>`:''}
-      <div class="rv-act" style="margin-top:7px;"><button class="btn-ry" onclick="openRVM(${r.id})">✓ Hemen İşle</button></div>
+      <div class="rv-act" style="margin-top:7px;"><button class="btn-ry" onclick="openRVM(${r.id})">✓ Hemen İşle</button><button class="btn-rd" style="color:var(--ac);" onclick="openRVE(${r.id})">✏️ Düzenle</button></div>
     </div>`).join('')}
   </div>`;
 }
@@ -1921,15 +1936,21 @@ function renderBugunRV(){
 function openRVM(id){
   modalRV=D.rv.find(r=>r.id===id);if(!modalRV)return;
 
-  // Seansa bağlı randevu ise: ödeme zaten paket alımında yapıldı, tekrar sorma
-  if(modalRV.seansId){
-    const s=D.sea.find(x=>x.id===modalRV.seansId);
-    const sIsim = s ? s.isim : modalRV.isim;
-    const kalanBilgi = s ? `${s.kalan}/${s.toplam} seans kaldı` : '';
+  // Seansa veya Biglion kuponuna bağlı randevu ise: ödeme zaten alımında yapıldı, tekrar sorma
+  if(modalRV.seansId||modalRV.biglionId){
+    let kalanBilgi='', etiket='📦 Seans paketinden';
+    if(modalRV.biglionId){
+      const b=D.biglion.find(x=>x.id===modalRV.biglionId);
+      kalanBilgi = b?`${b.toplamSeans-b.yapilanSeans}/${b.toplamSeans} kaldı`:'';
+      etiket='🎟️ Biglion kuponundan';
+    } else {
+      const s=D.sea.find(x=>x.id===modalRV.seansId);
+      kalanBilgi = s?`${s.kalan}/${s.toplam} seans kaldı`:'';
+    }
     document.getElementById('rv-mtl').textContent=`${modalRV.isim} — ${modalRV.saat}`;
     document.getElementById('rv-m-det').innerHTML=`<div style="font-weight:600;font-size:13px;">${modalRV.isim}</div>
       <div style="font-size:11px;color:var(--mu);margin-top:3px;">${modalRV.hiz}${modalRV.plat?' · '+modalRV.plat:''} · ${modalRV.sure} dk${modalRV.not?' · '+modalRV.not:''}</div>
-      <div style="font-size:12px;color:var(--ac2);margin-top:6px;background:rgba(56,217,169,.1);border-radius:7px;padding:7px 9px;">📦 Seans paketinden — ödeme zaten alındı${kalanBilgi?' · '+kalanBilgi:''}</div>`;
+      <div style="font-size:12px;color:var(--ac2);margin-top:6px;background:rgba(56,217,169,.1);border-radius:7px;padding:7px 9px;">${etiket} — ödeme zaten alındı${kalanBilgi?' · '+kalanBilgi:''}</div>`;
     // Ödeme adımlarını gizle
     document.getElementById('rv-odeme-step').style.display='none';
     document.getElementById('rv-tutar-step').style.display='none';
@@ -1975,21 +1996,31 @@ function rvPosHes(){
   document.getElementById('rv-m-tutar').value=net;
 }
 function rvYap(){
-  // Seansa bağlı randevu: ödeme yok, sadece "yapıldı" işaretle + seans sayacını azalt
-  if(modalRV.seansId){
+  // Seansa veya Biglion kuponuna bağlı randevu: ödeme yok, sadece "yapıldı" işaretle + sayacı azalt
+  if(modalRV.seansId||modalRV.biglionId){
     const rv=D.rv.find(r=>r.id===modalRV.id);
     if(rv) rv.yapildi=true;
-    const s=D.sea.find(x=>x.id===modalRV.seansId);
-    if(s&&s.kalan>0){
-      const dk=parseInt(modalRV.sure)||60;
-      const dec=+(dk/60).toFixed(2);
-      s.kalan=+(Math.max(0,s.kalan-dec)).toFixed(2);
-      if(!s.log)s.log=[];
-      s.log.push({tarih:rv.tarih,not:rv.hiz+' · Randevudan',sure:dk,dusen:dec});
+    if(modalRV.biglionId){
+      const b=D.biglion.find(x=>x.id===modalRV.biglionId);
+      if(b&&b.yapilanSeans<b.toplamSeans){
+        b.yapilanSeans++;
+        if(!b.log)b.log=[];
+        b.log.push({tarih:rv.tarih,not:rv.hiz+' · Randevudan',sure:parseInt(modalRV.sure)||60,dusen:1});
+      }
+    } else {
+      const s=D.sea.find(x=>x.id===modalRV.seansId);
+      if(s&&s.kalan>0){
+        const dk=parseInt(modalRV.sure)||60;
+        const dec=+(dk/60).toFixed(2);
+        s.kalan=+(Math.max(0,s.kalan-dec)).toFixed(2);
+        if(!s.log)s.log=[];
+        s.log.push({tarih:rv.tarih,not:rv.hiz+' · Randevudan',sure:dk,dusen:dec});
+      }
     }
     save();closeRVM();renderAll();renderBugunRV();
     if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
     if(document.getElementById('page-seanslar').classList.contains('on'))renderS();
+    if(document.getElementById('page-biglion')&&document.getElementById('page-biglion').classList.contains('on'))renderBiglion();
     if(document.getElementById('page-takvim').classList.contains('on'))renderCal();
     return;
   }
@@ -2019,6 +2050,49 @@ function rvYap(){
   if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
 }
 function closeRVM(){document.getElementById('rv-ov').classList.add('h');modalRV=null;rvSelOd=null;}
+let modalRVE=null;
+function openRVE(id){
+  modalRVE=D.rv.find(r=>r.id===id);if(!modalRVE)return;
+  document.getElementById('rve-isim').textContent=`${modalRVE.isim} · ${modalRVE.hiz}${modalRVE.plat?' · '+modalRVE.plat:''}`;
+  document.getElementById('rve-tarih').value=modalRVE.tarih;
+  document.getElementById('rve-saat').value=modalRVE.saat;
+  document.getElementById('rve-sure').value=modalRVE.sure;
+  document.getElementById('rve-not').value=modalRVE.not||'';
+  document.getElementById('rve-warn-box').classList.remove('on');
+  document.getElementById('rve-warn-box').textContent='';
+  document.getElementById('rve-ov').classList.remove('h');
+}
+function closeRVE(){document.getElementById('rve-ov').classList.add('h');modalRVE=null;}
+function kaydetRVE(){
+  if(!modalRVE)return;
+  const tarih=document.getElementById('rve-tarih').value;
+  const saat=document.getElementById('rve-saat').value;
+  const sure=parseInt(document.getElementById('rve-sure').value)||60;
+  const not=document.getElementById('rve-not').value.trim();
+  if(!tarih||!saat){alert('Tarih ve saat girin.');return;}
+  // Çakışma kontrolü (kendisi hariç)
+  const baslangic=rvToMinutes(saat);
+  const bitis=baslangic+sure;
+  const cakisan=D.rv.find(r=>{
+    if(r.id===modalRVE.id||r.tarih!==tarih||r.yapildi) return false;
+    const rs=rvToMinutes(r.saat);
+    const rb=rs+(parseInt(r.sure)||60);
+    return baslangic<rb && bitis>rs;
+  });
+  if(cakisan){
+    const warnEl=document.getElementById('rve-warn-box');
+    warnEl.textContent=`🚫 Kaydedilemedi! ${cakisan.isim} ile çakışıyor — ${cakisan.saat} / ${cakisan.sure} dk. Farklı saat seçin.`;
+    warnEl.classList.add('on');
+    return;
+  }
+  modalRVE.tarih=tarih;
+  modalRVE.saat=saat;
+  modalRVE.sure=sure;
+  modalRVE.sureLabel=sure+' dk';
+  modalRVE.not=not;
+  D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
+  save();closeRVE();renderRV();renderBugunRV();renderCal();
+}
 function silRV(id){if(!confirm('Randevuyu sil?'))return;D.rv=D.rv.filter(r=>r.id!==id);save();renderRV();renderBugunRV();renderCal();}
 
 // ===================== TAKVİM =====================
@@ -2249,10 +2323,21 @@ function renderS(){
     </div>`;
   }).join('');
 }
-function openSM(id){
-  modalSeans=D.sea.find(s=>s.id===id);if(!modalSeans)return;
-  const bitti=modalSeans.kalan<=0;
-  document.getElementById('sm-tl').textContent=`${modalSeans.isim} – Seans${bitti?' (Tamamlandı)':''}`;
+let modalSeansTip='sea';
+function openSM(id, tip='sea'){
+  modalSeansTip=tip;
+  let bitti;
+  if(tip==='big'){
+    modalSeans=D.biglion.find(b=>b.id===id);if(!modalSeans)return;
+    if(!modalSeans.log)modalSeans.log=[];
+    const kalan=modalSeans.toplamSeans-modalSeans.yapilanSeans;
+    bitti=kalan<=0;
+    document.getElementById('sm-tl').textContent=`${modalSeans.isim} – Biglion Kuponu${bitti?' (Tamamlandı)':''}`;
+  } else {
+    modalSeans=D.sea.find(s=>s.id===id);if(!modalSeans)return;
+    bitti=modalSeans.kalan<=0;
+    document.getElementById('sm-tl').textContent=`${modalSeans.isim} – Seans${bitti?' (Tamamlandı)':''}`;
+  }
   document.getElementById('sm-input-area').style.display=bitti?'none':'block';
   document.getElementById('sm-done-notice').style.display=bitti?'block':'none';
   document.getElementById('sm-close-only').style.display=bitti?'block':'none';
@@ -2271,23 +2356,35 @@ function openSM(id){
 }
 function closeSM(){document.getElementById('sm-ov').classList.add('h');modalSeans=null;}
 function kullanS(){
-  if(!modalSeans||modalSeans.kalan<=0)return;
+  if(!modalSeans)return;
+  const kalanOnceki=modalSeansTip==='big'?(modalSeans.toplamSeans-modalSeans.yapilanSeans):modalSeans.kalan;
+  if(kalanOnceki<=0)return;
   const tarih=document.getElementById('sm-tarih').value;const not=document.getElementById('sm-not').value.trim();
   if(!tarih){alert('Tarih seçin.');return;}
   const hiz=document.getElementById('sm-hiz')?.value||'';
   const ssaat=document.getElementById('sm-saat')?.value||'10:00';
   const ssure=parseInt(document.getElementById('sm-sure')?.value)||60;
   const rvEkle=document.getElementById('sm-rv-ekle')?.checked;
-  const dec=+(ssure/60).toFixed(2);
-  modalSeans.kalan=+(Math.max(0,modalSeans.kalan-dec)).toFixed(2);
   if(!modalSeans.log)modalSeans.log=[];
-  modalSeans.log.push({tarih,not,hiz,saat:ssaat,sure:ssure,dusen:dec});
-  // Randevuya ekle — seans zaten şimdi yapıldığı için doğrudan "yapıldı" ve pakete bağlı olarak ekleniyor
-  if(rvEkle&&tarih){
-    D.rv.push({id:Date.now(),isim:modalSeans.isim,saat:ssaat,tarih,hiz:hiz||'Masaj',plat:'',sure:ssure,sureLabel:ssure+' dk',fiyat:0,not:not||'Seans paketi kullanımı',yapildi:true,seansId:modalSeans.id});
-    D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
+  if(modalSeansTip==='big'){
+    modalSeans.yapilanSeans=Math.min(modalSeans.toplamSeans,modalSeans.yapilanSeans+1);
+    modalSeans.log.push({tarih,not,hiz,saat:ssaat,sure:ssure,dusen:1});
+    if(rvEkle&&tarih){
+      D.rv.push({id:Date.now(),isim:modalSeans.isim,saat:ssaat,tarih,hiz:hiz||'Masaj',plat:'Biglion',sure:ssure,sureLabel:ssure+' dk',fiyat:0,not:not||'Biglion kuponu kullanımı',yapildi:true,biglionId:modalSeans.id});
+      D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
+    }
+    save();closeSM();renderBiglion();renderBugunRV();if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
+  } else {
+    const dec=+(ssure/60).toFixed(2);
+    modalSeans.kalan=+(Math.max(0,modalSeans.kalan-dec)).toFixed(2);
+    modalSeans.log.push({tarih,not,hiz,saat:ssaat,sure:ssure,dusen:dec});
+    // Randevuya ekle — seans zaten şimdi yapıldığı için doğrudan "yapıldı" ve pakete bağlı olarak ekleniyor
+    if(rvEkle&&tarih){
+      D.rv.push({id:Date.now(),isim:modalSeans.isim,saat:ssaat,tarih,hiz:hiz||'Masaj',plat:'',sure:ssure,sureLabel:ssure+' dk',fiyat:0,not:not||'Seans paketi kullanımı',yapildi:true,seansId:modalSeans.id});
+      D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
+    }
+    save();closeSM();renderS();renderBugunRV();if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
   }
-  save();closeSM();renderS();renderBugunRV();if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
 }
 function silS(id){if(!confirm('Sil?'))return;D.sea=D.sea.filter(s=>s.id!==id);save();renderS();}
 
@@ -2301,7 +2398,7 @@ function ekleBiglion(){
   if(!isim){alert('Müşteri adı girin.');return;}
   D.biglion.unshift({
     id:Date.now(), isim, toplamSeans:seans, yapilanSeans:0,
-    kuponTutari:tutar, tarih, odemeDurumu:'bekliyor', odemeTarihi:null, odenenTutar:null, odemeNotu:null
+    kuponTutari:tutar, tarih, odemeDurumu:'bekliyor', odemeTarihi:null, odenenTutar:null, odemeNotu:null, log:[]
   });
   save();
   document.getElementById('big-isim').value='';
@@ -2348,12 +2445,21 @@ function renderBiglion(){
       <div class="sbar"><div class="sbf" style="width:${pct}%;background:${bitti?'var(--ac2)':'var(--warn)'}"></div></div>
       <div class="sinf"><span>${b.yapilanSeans} yapıldı</span><span>${b.toplamSeans-b.yapilanSeans} kaldı</span></div>
       <div class="sact">
-        ${!bitti?`<button class="btn-sy" onclick="biglionSeansYap(${b.id})">✓ +1 Seans Yapıldı</button>`:''}
+        ${!bitti?`<button class="btn-sy" onclick="openSM(${b.id},'big')">✓ +1 Seans Yapıldı</button><button class="btn-sy" style="background:var(--sf2);color:var(--ac);border:1px solid var(--ac);" onclick="biglionRandevu(${b.id})">📅 Randevu</button>`:`<button class="btn-sy" style="background:var(--sf2);color:var(--mu);border:1px solid var(--bd);" onclick="openSM(${b.id},'big')">📋 Geçmişi Gör</button>`}
         <button class="btn-sd" onclick="biglionSil(${b.id})">Sil</button>
       </div>
     </div>`;
   }).join('');
   el.innerHTML=html;
+}
+function biglionRandevu(id){
+  const b=D.biglion.find(x=>x.id===id);if(!b)return;
+  goP('randevu');
+  buildPaketSelect();
+  const sel=document.getElementById('rv-paket-sec');
+  if(sel){ sel.value='b_'+id; rvPaketSecDegisti(); }
+  document.getElementById('rv-isim').value=b.isim;
+  document.getElementById('rv-not').value='';
 }
 function biglionSeansYap(id){
   const b=D.biglion.find(x=>x.id===id);if(!b)return;
@@ -2748,9 +2854,11 @@ function buildPaketSelect(){
   const sel=document.getElementById('rv-paket-sec');if(!sel)return;
   const cur=sel.value;
   const aktifler=D.sea.filter(s=>s.kalan>0);
+  const bigAktifler=(D.biglion||[]).filter(b=>b.yapilanSeans<b.toplamSeans);
   sel.innerHTML='<option value="">— Paket Yok (Normal Randevu) —</option>'
-    +aktifler.map(s=>`<option value="${s.id}">${esc(s.isim)} (${s.kalan}/${s.toplam} kaldı)</option>`).join('');
-  if(aktifler.some(s=>String(s.id)===cur)) sel.value=cur;
+    +aktifler.map(s=>`<option value="${s.id}">${esc(s.isim)} (${s.kalan}/${s.toplam} kaldı)</option>`).join('')
+    +bigAktifler.map(b=>`<option value="b_${b.id}">🎟️ ${esc(b.isim)} (${b.toplamSeans-b.yapilanSeans}/${b.toplamSeans} kaldı · Biglion)</option>`).join('');
+  if(aktifler.some(s=>String(s.id)===cur) || bigAktifler.some(b=>'b_'+b.id===cur)) sel.value=cur;
 }
 function rvPaketSecDegisti(){
   const sel=document.getElementById('rv-paket-sec');if(!sel)return;
@@ -2759,9 +2867,16 @@ function rvPaketSecDegisti(){
   const fiyatGrp=document.getElementById('rv-fiyat-grp');
   const fiyatInp=document.getElementById('rv-fiyat');
   if(id){
-    const s=D.sea.find(x=>String(x.id)===id);
-    if(s){
-      document.getElementById('rv-isim').value=s.isim;
+    let isim=null;
+    if(id.startsWith('b_')){
+      const b=D.biglion.find(x=>String(x.id)===id.slice(2));
+      if(b) isim=b.isim;
+    } else {
+      const s=D.sea.find(x=>String(x.id)===id);
+      if(s) isim=s.isim;
+    }
+    if(isim){
+      document.getElementById('rv-isim').value=isim;
       if(hint) hint.style.display='block';
       if(fiyatInp) fiyatInp.value='';
       if(fiyatGrp) fiyatGrp.style.display='none';
