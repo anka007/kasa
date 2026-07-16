@@ -713,6 +713,41 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetIM()" data-i18n="btn_kaydet_check">✓ Kaydet</button><button class="btns" onclick="closeIM()" data-i18n="btn_iptal">İptal</button></div>
 </div></div>
 
+<!-- BIGLION KUPONU DÜZENLE MODAL -->
+<div class="mov h" id="big-em-ov">
+<div class="modal">
+  <div class="mtl">Biglion Kuponunu Düzenle</div>
+  <div class="ig"><label>Müşteri Adı</label><input type="text" id="big-em-isim"></div>
+  <div class="r2">
+    <div class="ig"><label>Toplam Seans</label><input type="number" id="big-em-toplam" min="1"></div>
+    <div class="ig"><label>Yapılan Seans</label><input type="number" id="big-em-yapilan" min="0"></div>
+  </div>
+  <div class="r2">
+    <div class="ig"><label>Kupon Tutarı (₽)</label><input type="number" id="big-em-tutar" step="0.01"></div>
+    <div class="ig" style="max-width:128px;"><label>Aktivasyon Tarihi</label><input type="date" id="big-em-tarih"></div>
+  </div>
+  <div class="hint" style="margin-bottom:9px;">Yanlış girilen seans sayısını veya yapılan seans adedini burada düzeltebilirsin.</div>
+  <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetBigEM()">✓ Kaydet</button><button class="btns" onclick="closeBigEM()">İptal</button></div>
+</div></div>
+
+<!-- SEANS PAKETİ DÜZENLE MODAL -->
+<div class="mov h" id="s-em-ov">
+<div class="modal">
+  <div class="mtl">Seans Paketini Düzenle</div>
+  <div class="ig"><label>Kişi Adı</label><input type="text" id="s-em-isim"></div>
+  <div class="r2">
+    <div class="ig"><label>Toplam Seans</label><input type="number" id="s-em-toplam" min="1" step="0.01"></div>
+    <div class="ig"><label>Kalan Seans</label><input type="number" id="s-em-kalan" min="0" step="0.01"></div>
+  </div>
+  <div class="r2">
+    <div class="ig"><label>Toplam Tutar (₽)</label><input type="number" id="s-em-tutar" step="0.01"></div>
+    <div class="ig" style="max-width:128px;"><label>Alış Tarihi</label><input type="date" id="s-em-tarih"></div>
+  </div>
+  <div class="ig"><label>Ödeme Türü</label><select id="s-em-od"><option value="pos">🏦 POS</option><option value="nf">🧾 Nakit Fişli</option><option value="nfs">💵 Nakit Fişsiz</option><option value="bir">👤 Bireysel Hesap</option></select></div>
+  <div class="hint" style="margin-bottom:9px;">Yanlış girilen toplam/kalan seans sayısını burada düzeltebilirsin.</div>
+  <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetSEM()">✓ Kaydet</button><button class="btns" onclick="closeSEM()">İptal</button></div>
+</div></div>
+
 <!-- RANDEVU İŞLE MODAL -->
 <div class="mov h" id="rv-ov">
 <div class="modal">
@@ -2399,6 +2434,7 @@ function renderS(){
           ? `<button class="btn-sy" style="background:var(--sf2);color:var(--mu);border:1px solid var(--bd);" onclick="openSM(${s.id})">📋 Geçmişi Gör</button>`
           : `<button class="btn-sy" onclick="openSM(${s.id})">✓ Seans Yaptı</button>
              <button class="btn-sy" style="background:var(--sf2);color:var(--ac);border:1px solid var(--ac);" onclick="seansRandevu(${s.id})">📅 Randevu</button>`}
+        <button class="btn-sy" style="background:rgba(108,99,255,.12);color:var(--ac);border:1px solid rgba(108,99,255,.3);" onclick="openSEM(${s.id})">✏️ Düzenle</button>
         <button class="btn-sd" onclick="silS(${s.id})">Sil</button>
       </div>
     </div>`;
@@ -2468,6 +2504,38 @@ function kullanS(){
   }
 }
 function silS(id){if(!confirm('Sil?'))return;D.sea=D.sea.filter(s=>s.id!==id);save();renderS();}
+let modalSEM=null;
+function openSEM(id){
+  modalSEM=D.sea.find(s=>s.id===id);if(!modalSEM)return;
+  document.getElementById('s-em-isim').value=modalSEM.isim;
+  document.getElementById('s-em-toplam').value=modalSEM.toplam;
+  document.getElementById('s-em-kalan').value=modalSEM.kalan;
+  document.getElementById('s-em-tutar').value=modalSEM.tutar||'';
+  document.getElementById('s-em-tarih').value=modalSEM.tarih||today();
+  document.getElementById('s-em-od').value=modalSEM.od||'pos';
+  document.getElementById('s-em-ov').classList.remove('h');
+}
+function closeSEM(){document.getElementById('s-em-ov').classList.add('h');modalSEM=null;}
+function kaydetSEM(){
+  if(!modalSEM)return;
+  const isim=document.getElementById('s-em-isim').value.trim();
+  const toplam=parseFloat(document.getElementById('s-em-toplam').value)||1;
+  let kalan=parseFloat(document.getElementById('s-em-kalan').value);
+  if(isNaN(kalan)) kalan=0;
+  const tutar=parseFloat(document.getElementById('s-em-tutar').value)||0;
+  const tarih=document.getElementById('s-em-tarih').value||modalSEM.tarih;
+  const od=document.getElementById('s-em-od').value;
+  if(!isim){alert('Kişi adı girin.');return;}
+  if(kalan>toplam) kalan=toplam;
+  if(kalan<0) kalan=0;
+  modalSEM.isim=isim;
+  modalSEM.toplam=toplam;
+  modalSEM.kalan=kalan;
+  modalSEM.tutar=tutar;
+  modalSEM.tarih=tarih;
+  modalSEM.od=od;
+  save();closeSEM();renderS();
+}
 
 // ===================== BIGLION KUPONLARI =====================
 let bigSecili=new Set();
@@ -2527,6 +2595,7 @@ function renderBiglion(){
       <div class="sinf"><span>${b.yapilanSeans} yapıldı</span><span>${b.toplamSeans-b.yapilanSeans} kaldı</span></div>
       <div class="sact">
         ${!bitti?`<button class="btn-sy" onclick="openSM(${b.id},'big')">✓ +1 Seans Yapıldı</button><button class="btn-sy" style="background:var(--sf2);color:var(--ac);border:1px solid var(--ac);" onclick="biglionRandevu(${b.id})">📅 Randevu</button>`:`<button class="btn-sy" style="background:var(--sf2);color:var(--mu);border:1px solid var(--bd);" onclick="openSM(${b.id},'big')">📋 Geçmişi Gör</button>`}
+        <button class="btn-sy" style="background:rgba(108,99,255,.12);color:var(--ac);border:1px solid rgba(108,99,255,.3);" onclick="openBigEM(${b.id})">✏️ Düzenle</button>
         <button class="btn-sd" onclick="biglionSil(${b.id})">Sil</button>
       </div>
     </div>`;
@@ -2564,6 +2633,34 @@ function biglionTopluOdemeKaydet(){
   save();renderBiglion();renderKasalar();
 }
 function biglionSil(id){if(!confirm('Bu kuponu silmek istiyor musun?'))return;bigSecili.delete(id);D.biglion=D.biglion.filter(b=>b.id!==id);save();renderBiglion();}
+let modalBigEM=null;
+function openBigEM(id){
+  modalBigEM=D.biglion.find(b=>b.id===id);if(!modalBigEM)return;
+  document.getElementById('big-em-isim').value=modalBigEM.isim;
+  document.getElementById('big-em-toplam').value=modalBigEM.toplamSeans;
+  document.getElementById('big-em-yapilan').value=modalBigEM.yapilanSeans;
+  document.getElementById('big-em-tutar').value=modalBigEM.kuponTutari||'';
+  document.getElementById('big-em-tarih').value=modalBigEM.tarih||today();
+  document.getElementById('big-em-ov').classList.remove('h');
+}
+function closeBigEM(){document.getElementById('big-em-ov').classList.add('h');modalBigEM=null;}
+function kaydetBigEM(){
+  if(!modalBigEM)return;
+  const isim=document.getElementById('big-em-isim').value.trim();
+  const toplam=parseInt(document.getElementById('big-em-toplam').value)||1;
+  let yapilan=parseInt(document.getElementById('big-em-yapilan').value)||0;
+  const tutar=parseFloat(document.getElementById('big-em-tutar').value)||0;
+  const tarih=document.getElementById('big-em-tarih').value||modalBigEM.tarih;
+  if(!isim){alert('Müşteri adı girin.');return;}
+  if(yapilan>toplam) yapilan=toplam;
+  if(yapilan<0) yapilan=0;
+  modalBigEM.isim=isim;
+  modalBigEM.toplamSeans=toplam;
+  modalBigEM.yapilanSeans=yapilan;
+  modalBigEM.kuponTutari=tutar;
+  modalBigEM.tarih=tarih;
+  save();closeBigEM();renderBiglion();
+}
 
 
 // ===================== PARAMETRELER =====================
