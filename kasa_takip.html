@@ -2131,12 +2131,13 @@ function renderCalDet(tarih){
   document.getElementById('cal-det-lbl').textContent=`${parseInt(d)} ${AYLAR[parseInt(m)-1]} ${y}`;
   const el=document.getElementById('cal-det');
 
-  // Günün masaj işlemleri (kaç masaj, ne kadar kazanç)
-  const gunIsl=D.isl.filter(x=>x.tarih===tarih&&['pos','nf','nfs','bir'].includes(x.tip));
-  const gunMasajSayisi=gunIsl.length;
-  const gunKazanc=gunIsl.reduce((s,x)=>s+x.tutar,0);
+  // Günün masaj işlemleri (kaç masaj, gerçekten alınan tutar) — alttaki randevu listesiyle BİREBİR tutarlı olacak şekilde hesaplanır
+  const rvsGun=D.rv.filter(r=>r.tarih===tarih);
+  const gunMasajSayisi=rvsGun.length;
+  const paketliSayisi=rvsGun.filter(r=>r.seansId||r.biglionId).length;
+  const gunKazanc=rvsGun.reduce((s,r)=>s+((r.seansId||r.biglionId)?0:(r.fiyat||0)),0);
   const gunOzetHtml=gunMasajSayisi
-    ? `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);">💆 ${gunMasajSayisi} masaj</div><div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gr);">${para(gunKazanc)}</div></div></div>`
+    ? `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);">💆 ${gunMasajSayisi} masaj${paketliSayisi?` (${paketliSayisi} paket/kupondan)`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gr);">${para(gunKazanc)}${paketliSayisi?' alındı':''}</div></div></div>`
     : `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="font-size:12px;color:var(--mu);">💆 Bu gün masaj kaydı yok</div></div>`;
 
   // Kapalı gün kontrolü
@@ -2171,8 +2172,8 @@ function renderCalDet(tarih){
     <div class="busy-time">${r.saat}</div>
     <div style="flex:1;"><div style="font-weight:600;font-size:12px;">${r.isim}</div>
     <div style="font-size:11px;color:var(--mu);">${r.hiz}${r.plat?' · ['+r.plat+']':''} · ${r.sure} dk</div></div>
-    ${r.fiyat&&!r.seansId?`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gr);">${para(r.fiyat)}</div>`:''}
-    ${r.seansId?`<div style="font-size:10px;color:var(--ac2);">📦 Seans</div>`:''}
+    ${r.fiyat&&!r.seansId&&!r.biglionId?`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gr);">${para(r.fiyat)}</div>`:''}
+    ${r.biglionId?`<div style="font-size:10px;color:var(--ac2);">🎟️ Biglion</div>`:r.seansId?`<div style="font-size:10px;color:var(--ac2);">📦 Seans</div>`:''}
     ${!r.yapildi?`<button class="btn-ry" style="padding:4px 8px;font-size:10px;" onclick="openRVM(${r.id})">İşle</button>`:''}
   </div>`).join('');
 
