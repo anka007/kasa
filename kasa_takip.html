@@ -2139,10 +2139,14 @@ function renderCalDet(tarih){
   // Randevuya bağlı olmayan diğer gelirler (Biglion toplu ödemesi, yeni paket satışı vb.) — kasaya giren toplamdan randevu kazancı düşülerek bulunur
   const gunIslToplam=D.isl.filter(x=>x.tarih===tarih&&['pos','nf','nfs','bir','yurt'].includes(x.tip)).reduce((s,x)=>s+x.tutar,0);
   const digerGelir=Math.max(0,+(gunIslToplam-gunKazanc).toFixed(2));
-  const gunOzetHtml=gunMasajSayisi
+  const gunToplam=+(gunKazanc+digerGelir).toFixed(2);
+  const gunOzetHtml=(gunMasajSayisi||digerGelir>0)
     ? `<div class="fc" style="padding:11px 14px;margin-bottom:9px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);">💆 ${gunMasajSayisi} masaj${paketliSayisi?` (${paketliSayisi} paket/kupondan)`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gr);">${para(gunKazanc)}${paketliSayisi?' alındı':''}</div></div>
-        ${digerGelir>0?`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid var(--bd);"><div style="font-size:11px;color:var(--mu);">💰 Diğer gelir (Biglion ödemesi, paket satışı vb.)</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ac2);">${para(digerGelir)}</div></div>`:''}
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);font-weight:600;">💰 Toplam Gelir</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--gr);">${para(gunToplam)}</div></div>
+        <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:4px;">
+          ${gunMasajSayisi?`<div style="display:flex;justify-content:space-between;"><div style="font-size:11px;color:var(--mu);">💆 ${gunMasajSayisi} masaj${paketliSayisi?` (${paketliSayisi} paket/kupondan)`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx);">${para(gunKazanc)}</div></div>`:''}
+          ${digerGelir>0?`<div style="display:flex;justify-content:space-between;"><div style="font-size:11px;color:var(--mu);">💼 Diğer gelir (Biglion ödemesi, paket satışı vb.)</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx);">${para(digerGelir)}</div></div>`:''}
+        </div>
       </div>`
     : `<div class="fc" style="padding:11px 14px;margin-bottom:9px;"><div style="font-size:12px;color:var(--mu);">💆 Bu gün masaj kaydı yok</div></div>`;
 
