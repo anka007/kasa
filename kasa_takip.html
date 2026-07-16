@@ -2131,20 +2131,23 @@ function renderCalDet(tarih){
   document.getElementById('cal-det-lbl').textContent=`${parseInt(d)} ${AYLAR[parseInt(m)-1]} ${y}`;
   const el=document.getElementById('cal-det');
 
-  // Günün masaj işlemleri (kaç masaj, gerçekten alınan tutar) — alttaki randevu listesiyle BİREBİR tutarlı olacak şekilde hesaplanır
+  // Günün masaj işlemleri (kaç masaj, gerçekten alınan tutar)
+  // Masaj geliri DOĞRUDAN işlem tipinden okunur (pos/nf/nfs/bir) — randevuyla eşleştirmeye çalışılmaz,
+  // çünkü randevu oluşturmadan direkt girilen masaj ödemeleri de bu tutara dahil olmalı.
+  // Sadece Biglion toplu ödemesi (kendi ayrı satırı olan, randevuyla ilgisi olmayan bir tahsilat) ayrıştırılır.
   const rvsGun=D.rv.filter(r=>r.tarih===tarih);
   const gunMasajSayisi=rvsGun.length;
   const paketliSayisi=rvsGun.filter(r=>r.seansId||r.biglionId).length;
-  const gunKazanc=rvsGun.reduce((s,r)=>s+((r.seansId||r.biglionId)?0:(r.fiyat||0)),0);
-  // Randevuya bağlı olmayan diğer gelirler (Biglion toplu ödemesi, yeni paket satışı vb.) — kasaya giren toplamdan randevu kazancı düşülerek bulunur
-  const gunIslToplam=D.isl.filter(x=>x.tarih===tarih&&['pos','nf','nfs','bir','yurt'].includes(x.tip)).reduce((s,x)=>s+x.tutar,0);
-  const digerGelir=Math.max(0,+(gunIslToplam-gunKazanc).toFixed(2));
+  const gunIslMasaj=D.isl.filter(x=>x.tarih===tarih&&['pos','nf','nfs','bir'].includes(x.tip)&&!(x.not&&x.not.startsWith('Biglion toplu ödeme')));
+  const gunKazanc=+gunIslMasaj.reduce((s,x)=>s+x.tutar,0).toFixed(2);
+  const gunIslDiger=D.isl.filter(x=>x.tarih===tarih&&(x.tip==='yurt'||(x.not&&x.not.startsWith('Biglion toplu ödeme'))));
+  const digerGelir=+gunIslDiger.reduce((s,x)=>s+x.tutar,0).toFixed(2);
   const gunToplam=+(gunKazanc+digerGelir).toFixed(2);
-  const gunOzetHtml=(gunMasajSayisi||digerGelir>0)
+  const gunOzetHtml=(gunMasajSayisi||gunKazanc>0||digerGelir>0)
     ? `<div class="fc" style="padding:11px 14px;margin-bottom:9px;">
         <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:12px;color:var(--mu);font-weight:600;">💰 Toplam Gelir</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--gr);">${para(gunToplam)}</div></div>
         <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:4px;">
-          ${gunMasajSayisi?`<div style="display:flex;justify-content:space-between;"><div style="font-size:11px;color:var(--mu);">💆 ${gunMasajSayisi} masaj${paketliSayisi?` (${paketliSayisi} paket/kupondan)`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx);">${para(gunKazanc)}</div></div>`:''}
+          ${gunKazanc>0||gunMasajSayisi?`<div style="display:flex;justify-content:space-between;"><div style="font-size:11px;color:var(--mu);">💆 Masaj geliri${gunMasajSayisi?` (${gunMasajSayisi} randevu${paketliSayisi?', '+paketliSayisi+' paket/kupondan':''})`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx);">${para(gunKazanc)}</div></div>`:''}
           ${digerGelir>0?`<div style="display:flex;justify-content:space-between;"><div style="font-size:11px;color:var(--mu);">💼 Diğer gelir (Biglion ödemesi, paket satışı vb.)</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx);">${para(digerGelir)}</div></div>`:''}
         </div>
       </div>`
