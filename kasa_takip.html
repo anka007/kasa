@@ -262,6 +262,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   </div>
 
   <div id="bugun-rv-wrap"></div>
+  <div id="yarin-rv-wrap"></div>
 
   <div class="fc">
     <div class="ftl" data-i18n="ftl_yeni_islem">Yeni İşlem</div>
@@ -292,16 +293,32 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     </div>
     <div class="step" id="st-odeme">
       <div class="slbl">Ödeme Türü</div>
-      <div class="sbg g2">
+      <div id="f-odeme-single-btns" class="sbg g2">
         <button class="sb pos" data-o="pos" onclick="selOd(this)"><span class="si">🏦</span>POS</button>
         <button class="sb nf"  data-o="nf"  onclick="selOd(this)"><span class="si">🧾</span>Nakit Fişli</button>
         <button class="sb nfs" data-o="nfs" onclick="selOd(this)"><span class="si">💵</span>Nakit Fişsiz</button>
         <button class="sb bir" data-o="bir" onclick="selOd(this)"><span class="si">👤</span>Bireysel</button>
       </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:9px;font-size:12px;color:var(--mu);cursor:pointer;">
+        <input type="checkbox" id="f-split-on" onchange="toggleSplitOdeme()" style="width:15px;height:15px;">
+        🔀 Bölünmüş ödeme — birden fazla yöntemle alındı (ör. kısmen kart, kısmen nakit)
+      </label>
     </div>
     <div class="posbox" id="f-posbox">
       <div class="ig" style="margin-bottom:5px;max-width:130px;"><label data-i18n="komisyon_pct">Komisyon %</label><input type="number" id="f-posoran" step="0.01" oninput="posHes()"></div>
       <div class="posres" id="f-posres"></div>
+    </div>
+    <div class="step" id="st-odeme-split">
+      <div class="slbl">Ödeme Dağılımı</div>
+      <div class="ig"><label>🏦 POS (₽)</label><input type="number" id="f-split-pos" step="0.01" placeholder="0" oninput="splitTotalHes()"></div>
+      <div class="posbox" id="f-split-posbox" style="display:none;">
+        <div class="ig" style="margin-bottom:5px;max-width:130px;"><label>Komisyon %</label><input type="number" id="f-split-posoran" step="0.01" oninput="splitTotalHes()"></div>
+        <div class="posres" id="f-split-posres"></div>
+      </div>
+      <div class="ig"><label>🧾 Nakit Fişli (₽)</label><input type="number" id="f-split-nf" step="0.01" placeholder="0" oninput="splitTotalHes()"></div>
+      <div class="ig"><label>💵 Nakit Fişsiz (₽)</label><input type="number" id="f-split-nfs" step="0.01" placeholder="0" oninput="splitTotalHes()"></div>
+      <div class="ig"><label>👤 Bireysel (₽)</label><input type="number" id="f-split-bir" step="0.01" placeholder="0" oninput="splitTotalHes()"></div>
+      <div class="posres" id="f-split-toplam" style="margin-top:2px;font-weight:600;"></div>
     </div>
 
     <!-- Gider adımları -->
@@ -1163,7 +1180,7 @@ function renderKasalar(){
 }
 
 // ===================== FORM AKIŞI =====================
-const ALL_STEPS=['st-plat','st-hiz','st-sure','st-odeme','st-acat','st-alcat','st-gkasa','st-virman','st-yurt-kaynak','st-tutar'];
+const ALL_STEPS=['st-plat','st-hiz','st-sure','st-odeme','st-odeme-split','st-acat','st-alcat','st-gkasa','st-virman','st-yurt-kaynak','st-tutar'];
 
 function selTur(tur,btn){
   document.querySelectorAll('#st1 .sb').forEach(b=>b.classList.remove('on'));
@@ -1177,6 +1194,12 @@ function selTur(tur,btn){
   document.getElementById('f-posres').innerHTML='';
   document.getElementById('f-tutar').value='';
   document.getElementById('f-tlbl').textContent='Tutar (₽)';
+  document.getElementById('f-split-on').checked=false;
+  sw('st-odeme-split',false);
+  const fosb=document.getElementById('f-odeme-single-btns');if(fosb)fosb.style.display='';
+  ['f-split-pos','f-split-nf','f-split-nfs','f-split-bir','f-split-posoran'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('f-split-toplam').innerHTML='';
+  document.getElementById('f-split-posbox').style.display='none';
 
   if(tur==='masaj'){
     sw('st-plat',true);sw('st-hiz',true);sw('st-sure',true);sw('st-odeme',true);sw('st-tutar',true);
@@ -1212,6 +1235,42 @@ function selOd(btn){
   if(F.odeme==='pos'){document.getElementById('f-posoran').value=D.par.posOran;posHes();}
 }
 
+function toggleSplitOdeme(){
+  const on=document.getElementById('f-split-on').checked;
+  const singleBtns=document.getElementById('f-odeme-single-btns');
+  if(on){
+    singleBtns.style.display='none';
+    document.querySelectorAll('#st-odeme .sb').forEach(b=>b.classList.remove('on'));
+    document.getElementById('f-posbox').classList.remove('on');
+    F.odeme=null;
+    sw('st-odeme-split',true);
+    sw('st-tutar',false);
+    document.getElementById('f-tutar').value='';
+    splitTotalHes();
+  } else {
+    singleBtns.style.display='';
+    sw('st-odeme-split',false);
+    sw('st-tutar',true);
+  }
+}
+function splitTotalHes(){
+  const pos=parseFloat(document.getElementById('f-split-pos').value)||0;
+  const nf=parseFloat(document.getElementById('f-split-nf').value)||0;
+  const nfs=parseFloat(document.getElementById('f-split-nfs').value)||0;
+  const bir=parseFloat(document.getElementById('f-split-bir').value)||0;
+  document.getElementById('f-split-posbox').style.display=pos>0?'block':'none';
+  if(pos>0){
+    const oran=parseFloat(document.getElementById('f-split-posoran').value)||D.par.posOran;
+    if(!document.getElementById('f-split-posoran').value) document.getElementById('f-split-posoran').value=oran;
+    const kom=+(pos*oran/100).toFixed(2);
+    document.getElementById('f-split-posres').innerHTML=`Komisyon: <strong>-${para(kom)}</strong> (ertesi gün POS gideri) &nbsp;·&nbsp; POS kasanıza: <strong>${para(pos)}</strong>`;
+  } else {
+    document.getElementById('f-split-posres').innerHTML='';
+  }
+  const toplam=+(pos+nf+nfs+bir).toFixed(2);
+  document.getElementById('f-tutar').value=toplam;
+  document.getElementById('f-split-toplam').innerHTML=toplam>0?`Toplam: <strong>${para(toplam)}</strong>`:'';
+}
 function posHes(){
   // f-poscek = müşterinin ödediği brüt tutar (POS'tan çekilen)
   const brutEl=document.getElementById('f-poscek');
@@ -1306,7 +1365,9 @@ function ekleI(){
     save();renderAll();resetF();return;
   }
 
-  if(!tutar||tutar<=0){alert('Tutar girin.');return;}
+  const splitOn=F.tur==='masaj'&&document.getElementById('f-split-on').checked;
+
+  if(!splitOn&&(!tutar||tutar<=0)){alert('Tutar girin.');return;}
 
   if(F.tur==='yurt'){
     const yKat=document.getElementById('f-yurt-kat')?.value||'Diğer Gelir';
@@ -1339,7 +1400,6 @@ function ekleI(){
   }
 
   // MASAJ
-  if(!F.odeme){alert('Ödeme türü seçin.');return;}
   const plat=document.getElementById('f-plat').value;
   const hiz=document.getElementById('f-hiz').value||'Masaj';
   const sureDk=parseInt(document.getElementById('f-sure').value)||60;
@@ -1350,6 +1410,31 @@ function ekleI(){
   if(kisi) parts.push(kisi);
   if(not) parts.push(not);
   const label=parts.join(' · ');
+
+  if(splitOn){
+    // Bölünmüş ödeme: birden fazla yöntemden gelen tutarları ayrı ayrı kaydet
+    const pos=parseFloat(document.getElementById('f-split-pos').value)||0;
+    const nf=parseFloat(document.getElementById('f-split-nf').value)||0;
+    const nfs=parseFloat(document.getElementById('f-split-nfs').value)||0;
+    const bir=parseFloat(document.getElementById('f-split-bir').value)||0;
+    if(pos<=0&&nf<=0&&nfs<=0&&bir<=0){alert('En az bir ödeme yöntemine tutar girin.');return;}
+    let baseId=Date.now();
+    if(pos>0){
+      const oran=parseFloat(document.getElementById('f-split-posoran').value)||D.par.posOran;
+      const kom=+(pos*oran/100).toFixed(2);
+      D.isl.unshift({id:baseId++,tip:'pos',tutar:pos,tarih,not:label,gkasa:'pos'});
+      if(kom>0){
+        D.isl.unshift({id:baseId++,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos'});
+      }
+    }
+    if(nf>0) D.isl.unshift({id:baseId++,tip:'nf',tutar:nf,tarih,not:label,gkasa:'nak'});
+    if(nfs>0) D.isl.unshift({id:baseId++,tip:'nfs',tutar:nfs,tarih,not:label,gkasa:'nak'});
+    if(bir>0) D.isl.unshift({id:baseId++,tip:'bir',tutar:bir,tarih,not:label,gkasa:'bir'});
+    D.isl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
+    save();renderAll();resetF();return;
+  }
+
+  if(!F.odeme){alert('Ödeme türü seçin.');return;}
 
   // Gelirin hangi kasaya gittiği:
   // pos → pos kasa, nf/nfs → nakit, bir → bireysel
@@ -1960,13 +2045,28 @@ function renderBugunRV(){
   const bug=today();
   const brvs=D.rv.filter(r=>r.tarih===bug&&!r.yapildi).sort((a,b)=>a.saat.localeCompare(b.saat));
   const w=document.getElementById('bugun-rv-wrap');
-  if(!brvs.length){w.innerHTML='';return;}
+  if(!brvs.length){w.innerHTML='';}else{
   w.innerHTML=`<div class="fc" style="border-color:rgba(108,99,255,.3);background:rgba(108,99,255,.05);margin-bottom:12px;">
     <div class="ftl" style="color:var(--ac);" data-i18n="ftl_bugun_rv">📅 Bugünkü Randevular</div>
     ${brvs.map(r=>`<div style="background:var(--sf2);border-radius:9px;padding:10px;margin-bottom:7px;">
       <div class="rv-hdr"><div><div class="rv-isim">${r.isim}</div><div class="rv-det">${r.hiz}${r.plat?' · ['+r.plat+']':''} · ${r.sure} dk</div></div><div class="rv-saat">${r.saat}</div></div>
       ${r.fiyat?`<div class="rv-fiyat">${para(r.fiyat)}</div>`:''}
       <div class="rv-act" style="margin-top:7px;"><button class="btn-ry" onclick="openRVM(${r.id})">✓ Hemen İşle</button><button class="btn-rd" style="color:var(--ac);" onclick="openRVE(${r.id})">✏️ Düzenle</button></div>
+    </div>`).join('')}
+  </div>`;}
+  renderYarinRV();
+}
+function renderYarinRV(){
+  const w=document.getElementById('yarin-rv-wrap');if(!w)return;
+  const [yy,mm,dd]=today().split('-').map(Number);
+  const dtY=new Date(yy,mm-1,dd+1);
+  const yarin=`${dtY.getFullYear()}-${String(dtY.getMonth()+1).padStart(2,'0')}-${String(dtY.getDate()).padStart(2,'0')}`;
+  const yrvs=D.rv.filter(r=>r.tarih===yarin&&!r.yapildi).sort((a,b)=>a.saat.localeCompare(b.saat));
+  if(!yrvs.length){w.innerHTML='';return;}
+  w.innerHTML=`<div class="fc" style="border-color:rgba(255,183,77,.35);background:rgba(255,183,77,.06);margin-bottom:12px;">
+    <div class="ftl" style="color:var(--warn);">🔔 Yarının Randevuları (${fd(yarin)})</div>
+    ${yrvs.map(r=>`<div style="background:var(--sf2);border-radius:9px;padding:10px;margin-bottom:7px;">
+      <div class="rv-hdr"><div><div class="rv-isim">${r.isim}</div><div class="rv-det">${r.hiz}${r.plat?' · ['+r.plat+']':''} · ${r.sure} dk</div></div><div class="rv-saat">${r.saat}</div></div>
     </div>`).join('')}
   </div>`;
 }
@@ -2040,10 +2140,12 @@ function rvYap(){
     if(rv) rv.yapildi=true;
     if(modalRV.biglionId){
       const b=D.biglion.find(x=>x.id===modalRV.biglionId);
-      if(b&&b.yapilanSeans<b.toplamSeans){
-        b.yapilanSeans++;
+      if(b&&(b.toplamSeans-b.yapilanSeans)>0){
+        const dk=parseInt(modalRV.sure)||60;
+        const dec=+(dk/60).toFixed(2);
+        b.yapilanSeans=+(b.yapilanSeans+dec).toFixed(2);
         if(!b.log)b.log=[];
-        b.log.push({tarih:rv.tarih,not:rv.hiz+' · Randevudan',sure:parseInt(modalRV.sure)||60,dusen:1});
+        b.log.push({tarih:rv.tarih,not:rv.hiz+' · Randevudan',sure:dk,dusen:dec});
       }
     } else {
       const s=D.sea.find(x=>x.id===modalRV.seansId);
@@ -2150,7 +2252,8 @@ function silRV(id){
   } else if(r.yapildi&&r.biglionId){
     const b=D.biglion.find(x=>x.id===r.biglionId);
     if(b){
-      b.yapilanSeans=Math.max(0,(b.yapilanSeans||0)-1);
+      const dec=+((parseInt(r.sure)||60)/60).toFixed(2);
+      b.yapilanSeans=Math.max(0,+((b.yapilanSeans||0)-dec).toFixed(2));
       if(b.log&&b.log.length){
         for(let i=b.log.length-1;i>=0;i--){
           if(b.log[i].tarih===r.tarih){ b.log.splice(i,1); break; }
@@ -2484,8 +2587,9 @@ function kullanS(){
   const rvEkle=document.getElementById('sm-rv-ekle')?.checked;
   if(!modalSeans.log)modalSeans.log=[];
   if(modalSeansTip==='big'){
-    modalSeans.yapilanSeans=Math.min(modalSeans.toplamSeans,modalSeans.yapilanSeans+1);
-    modalSeans.log.push({tarih,not,hiz,saat:ssaat,sure:ssure,dusen:1});
+    const dec=+(ssure/60).toFixed(2);
+    modalSeans.yapilanSeans=+(modalSeans.yapilanSeans+dec).toFixed(2);
+    modalSeans.log.push({tarih,not,hiz,saat:ssaat,sure:ssure,dusen:dec});
     if(rvEkle&&tarih){
       D.rv.push({id:Date.now(),isim:modalSeans.isim,saat:ssaat,tarih,hiz:hiz||'Masaj',plat:'Biglion',sure:ssure,sureLabel:ssure+' dk',fiyat:0,not:not||'Biglion kuponu kullanımı',yapildi:true,biglionId:modalSeans.id});
       D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
@@ -2585,14 +2689,14 @@ function renderBiglion(){
   html+=l.map(b=>{
     const bitti=b.yapilanSeans>=b.toplamSeans;
     const odendi=b.odemeDurumu==='odendi';
-    const pct=Math.round(b.yapilanSeans/b.toplamSeans*100);
+    const pct=Math.min(100,Math.round(b.yapilanSeans/b.toplamSeans*100));
     const secildi=bigSecili.has(b.id);
     return `<div class="sc ${bitti?'sc-done':''}" style="${secildi?'outline:2px solid var(--gr);':''}">
       <div class="sc-hdr">${!odendi?`<input type="checkbox" onchange="biglionSecimToggle(${b.id})" ${secildi?'checked':''} style="width:18px;height:18px;margin-right:8px;margin-top:3px;flex-shrink:0;">`:''}<div><div class="sisim">${esc(b.isim)}${odendi?' <span style="font-size:10px;color:var(--gr);font-weight:600;">· ÖDENDİ</span>':' <span style="font-size:10px;color:var(--warn);font-weight:600;">· ÖDEME BEKLİYOR</span>'}</div>
       <div class="smeta">${fd(b.tarih)}${b.kuponTutari?' · Kupon: '+para(b.kuponTutari):''}${odendi?' · '+(b.odemeNotu?esc(b.odemeNotu):('Yatan: '+para(b.odenenTutar)))+' ('+fd(b.odemeTarihi)+')':''}</div></div>
       <div class="skl ${bitti?'ok':'w'}">${b.yapilanSeans}/${b.toplamSeans}<br><span style="font-size:9px;font-weight:400;">seans</span></div></div>
       <div class="sbar"><div class="sbf" style="width:${pct}%;background:${bitti?'var(--ac2)':'var(--warn)'}"></div></div>
-      <div class="sinf"><span>${b.yapilanSeans} yapıldı</span><span>${b.toplamSeans-b.yapilanSeans} kaldı</span></div>
+      <div class="sinf"><span>${b.yapilanSeans} yapıldı</span><span>${Math.max(0,+(b.toplamSeans-b.yapilanSeans).toFixed(2))} kaldı</span></div>
       <div class="sact">
         ${!bitti?`<button class="btn-sy" onclick="openSM(${b.id},'big')">✓ +1 Seans Yapıldı</button><button class="btn-sy" style="background:var(--sf2);color:var(--ac);border:1px solid var(--ac);" onclick="biglionRandevu(${b.id})">📅 Randevu</button>`:`<button class="btn-sy" style="background:var(--sf2);color:var(--mu);border:1px solid var(--bd);" onclick="openSM(${b.id},'big')">📋 Geçmişi Gör</button>`}
         <button class="btn-sy" style="background:rgba(108,99,255,.12);color:var(--ac);border:1px solid rgba(108,99,255,.3);" onclick="openBigEM(${b.id})">✏️ Düzenle</button>
