@@ -772,18 +772,34 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   <div style="background:var(--sf2);border-radius:9px;padding:11px;margin-bottom:12px;" id="rv-m-det"></div>
   <div id="rv-odeme-step">
     <div class="slbl" style="margin-bottom:6px;">Ödeme Türü</div>
-    <div class="sbg g2" style="margin-bottom:9px;">
+    <div class="sbg g2" id="rv-odeme-single-btns" style="margin-bottom:9px;">
       <button class="sb pos" data-o="pos" onclick="selRvOd(this)"><span class="si">🏦</span>POS</button>
       <button class="sb nf"  data-o="nf"  onclick="selRvOd(this)"><span class="si">🧾</span>Nakit Fişli</button>
       <button class="sb nfs" data-o="nfs" onclick="selRvOd(this)"><span class="si">💵</span>Nakit Fişsiz</button>
       <button class="sb bir" data-o="bir" onclick="selRvOd(this)"><span class="si">👤</span>Bireysel</button>
     </div>
+    <label style="display:flex;align-items:center;gap:6px;margin-top:9px;margin-bottom:9px;font-size:12px;color:var(--mu);cursor:pointer;">
+      <input type="checkbox" id="rv-split-on" onchange="toggleRvSplitOdeme()" style="width:15px;height:15px;">
+      🔀 Bölünmüş ödeme — birden fazla yöntemle alındı (ör. kısmen kart, kısmen nakit)
+    </label>
     <div class="posbox" id="rv-posbox">
       <div class="r2">
         <div class="ig" style="margin-bottom:0;"><label data-i18n="pos_cekilen">POS'tan Çekilen (₽)</label><input type="number" id="rv-poscek" step="0.01" oninput="rvPosHes()"></div>
         <div class="ig" style="margin-bottom:0;max-width:110px;"><label data-i18n="komisyon_pct">Komisyon %</label><input type="number" id="rv-posoran" step="0.01" oninput="rvPosHes()"></div>
       </div>
       <div class="posres" id="rv-posres"></div>
+    </div>
+    <div class="step" id="rv-odeme-split">
+      <div class="slbl">Ödeme Dağılımı</div>
+      <div class="ig"><label>🏦 POS (₽)</label><input type="number" id="rv-split-pos" step="0.01" placeholder="0" oninput="rvSplitTotalHes()"></div>
+      <div class="posbox" id="rv-split-posbox" style="display:none;">
+        <div class="ig" style="margin-bottom:5px;max-width:130px;"><label>Komisyon %</label><input type="number" id="rv-split-posoran" step="0.01" oninput="rvSplitTotalHes()"></div>
+        <div class="posres" id="rv-split-posres"></div>
+      </div>
+      <div class="ig"><label>🧾 Nakit Fişli (₽)</label><input type="number" id="rv-split-nf" step="0.01" placeholder="0" oninput="rvSplitTotalHes()"></div>
+      <div class="ig"><label>💵 Nakit Fişsiz (₽)</label><input type="number" id="rv-split-nfs" step="0.01" placeholder="0" oninput="rvSplitTotalHes()"></div>
+      <div class="ig"><label>👤 Bireysel (₽)</label><input type="number" id="rv-split-bir" step="0.01" placeholder="0" oninput="rvSplitTotalHes()"></div>
+      <div class="posres" id="rv-split-toplam" style="margin-top:2px;font-weight:600;"></div>
     </div>
   </div>
   <div id="rv-tutar-step" class="ig"><label data-i18n="tutar_rub">Tutar (₽)</label><input type="number" id="rv-m-tutar" step="0.01"></div>
@@ -2105,6 +2121,12 @@ function openRVM(id){
   document.getElementById('rv-posres').innerHTML='';
   document.getElementById('rv-poscek').value='';
   document.getElementById('rv-posoran').value=D.par.posOran;
+  document.getElementById('rv-split-on').checked=false;
+  document.getElementById('rv-odeme-single-btns').style.display='';
+  sw('rv-odeme-split',false);
+  ['rv-split-pos','rv-split-nf','rv-split-nfs','rv-split-bir','rv-split-posoran'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('rv-split-toplam').innerHTML='';
+  document.getElementById('rv-split-posbox').style.display='none';
   document.getElementById('rv-mtl').textContent=`${modalRV.isim} — ${modalRV.saat}`;
   document.getElementById('rv-m-tutar').value=modalRV.fiyat||'';
   document.getElementById('rv-m-det').innerHTML=`<div style="font-weight:600;font-size:13px;">${modalRV.isim}</div>
@@ -2132,6 +2154,41 @@ function rvPosHes(){
   const kom=+(cek*oran/100).toFixed(2),net=+(cek-kom).toFixed(2);
   document.getElementById('rv-posres').innerHTML=`Komisyon: <strong>${para(kom)}</strong> &nbsp;·&nbsp; Net: <strong>${para(net)}</strong>`;
   document.getElementById('rv-m-tutar').value=net;
+}
+function toggleRvSplitOdeme(){
+  const on=document.getElementById('rv-split-on').checked;
+  if(on){
+    document.getElementById('rv-odeme-single-btns').style.display='none';
+    document.querySelectorAll('#rv-ov .sb').forEach(b=>b.classList.remove('on'));
+    document.getElementById('rv-posbox').classList.remove('on');
+    rvSelOd=null;
+    sw('rv-odeme-split',true);
+    document.getElementById('rv-tutar-step').style.display='none';
+    document.getElementById('rv-m-tutar').value='';
+    rvSplitTotalHes();
+  } else {
+    document.getElementById('rv-odeme-single-btns').style.display='';
+    sw('rv-odeme-split',false);
+    document.getElementById('rv-tutar-step').style.display='block';
+  }
+}
+function rvSplitTotalHes(){
+  const pos=parseFloat(document.getElementById('rv-split-pos').value)||0;
+  const nf=parseFloat(document.getElementById('rv-split-nf').value)||0;
+  const nfs=parseFloat(document.getElementById('rv-split-nfs').value)||0;
+  const bir=parseFloat(document.getElementById('rv-split-bir').value)||0;
+  document.getElementById('rv-split-posbox').style.display=pos>0?'block':'none';
+  if(pos>0){
+    const oran=parseFloat(document.getElementById('rv-split-posoran').value)||D.par.posOran;
+    if(!document.getElementById('rv-split-posoran').value) document.getElementById('rv-split-posoran').value=oran;
+    const kom=+(pos*oran/100).toFixed(2);
+    document.getElementById('rv-split-posres').innerHTML=`Komisyon: <strong>-${para(kom)}</strong> (ertesi gün POS gideri) &nbsp;·&nbsp; POS kasanıza: <strong>${para(pos)}</strong>`;
+  } else {
+    document.getElementById('rv-split-posres').innerHTML='';
+  }
+  const toplam=+(pos+nf+nfs+bir).toFixed(2);
+  document.getElementById('rv-m-tutar').value=toplam;
+  document.getElementById('rv-split-toplam').innerHTML=toplam>0?`Toplam: <strong>${para(toplam)}</strong>`:'';
 }
 function rvYap(){
   // Seansa veya Biglion kuponuna bağlı randevu: ödeme yok, sadece "yapıldı" işaretle + sayacı azalt
@@ -2165,11 +2222,39 @@ function rvYap(){
     return;
   }
 
+  const rvSplitOn=document.getElementById('rv-split-on').checked;
+  const tarih=modalRV.tarih;
+  const label=`${modalRV.hiz}${modalRV.plat?' · ['+modalRV.plat+']':''} · ${modalRV.sure} dk · ${modalRV.isim}`;
+
+  if(rvSplitOn){
+    // Bölünmüş ödeme: birden fazla yöntemden gelen tutarları ayrı ayrı kaydet
+    const pos=parseFloat(document.getElementById('rv-split-pos').value)||0;
+    const nf=parseFloat(document.getElementById('rv-split-nf').value)||0;
+    const nfs=parseFloat(document.getElementById('rv-split-nfs').value)||0;
+    const bir=parseFloat(document.getElementById('rv-split-bir').value)||0;
+    if(pos<=0&&nf<=0&&nfs<=0&&bir<=0){alert('En az bir ödeme yöntemine tutar girin.');return;}
+    let baseId=Date.now();
+    if(pos>0){
+      const oran=parseFloat(document.getElementById('rv-split-posoran').value)||D.par.posOran;
+      const kom=+(pos*oran/100).toFixed(2);
+      D.isl.unshift({id:baseId++,tip:'pos',tutar:pos,tarih,not:label,gkasa:'pos'});
+      if(kom>0){
+        D.isl.unshift({id:baseId++,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos'});
+      }
+    }
+    if(nf>0) D.isl.unshift({id:baseId++,tip:'nf',tutar:nf,tarih,not:label,gkasa:'nak'});
+    if(nfs>0) D.isl.unshift({id:baseId++,tip:'nfs',tutar:nfs,tarih,not:label,gkasa:'nak'});
+    if(bir>0) D.isl.unshift({id:baseId++,tip:'bir',tutar:bir,tarih,not:label,gkasa:'bir'});
+    D.isl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
+    const rvS=D.rv.find(r=>r.id===modalRV.id);if(rvS)rvS.yapildi=true;
+    save();closeRVM();renderAll();renderBugunRV();
+    if(document.getElementById('page-randevu').classList.contains('on'))renderRV();
+    return;
+  }
+
   if(!rvSelOd){alert('Ödeme türü seçin.');return;}
   const tutar=parseFloat(document.getElementById('rv-m-tutar').value);
   if(!tutar||tutar<=0){alert('Tutar girin.');return;}
-  const tarih=modalRV.tarih;
-  const label=`${modalRV.hiz}${modalRV.plat?' · ['+modalRV.plat+']':''} · ${modalRV.sure} dk · ${modalRV.isim}`;
   if(rvSelOd==='pos'){
     const cekStr=document.getElementById('rv-poscek').value;
     const cek=parseFloat(cekStr)||tutar;
