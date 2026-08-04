@@ -730,6 +730,20 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetIM()" data-i18n="btn_kaydet_check">✓ Kaydet</button><button class="btns" onclick="closeIM()" data-i18n="btn_iptal">İptal</button></div>
 </div></div>
 
+<!-- BÖLÜNMÜŞ ÖDEME DÜZENLE MODAL -->
+<div class="mov h" id="sm-ov">
+<div class="modal">
+  <div class="mtl">🔀 Bölünmüş Ödemeyi Düzenle</div>
+  <div class="ig"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="sm-tarih"></div>
+  <div class="ig"><label>🏦 POS (₽)</label><input type="number" id="sm-pos" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>🧾 Nakit Fişli (₽)</label><input type="number" id="sm-nf" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>💵 Nakit Fişsiz (₽)</label><input type="number" id="sm-nfs" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>👤 Bireysel (₽)</label><input type="number" id="sm-bir" step="0.01" placeholder="0"></div>
+  <div class="ig"><label data-i18n="not_aciklama">Not / Açıklama</label><input type="text" id="sm-not" placeholder="Ek bilgi..."></div>
+  <div style="font-size:11px;color:var(--mu);margin-bottom:9px;">Bir alanı 0 / boş bırakırsanız o ödeme yöntemi bu işlemden kaldırılır. POS tutarını değiştirirseniz, varsa bağlı komisyon gideri de yeni tutara göre orantılı olarak güncellenir.</div>
+  <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetSplitEdit()">✓ Kaydet</button><button class="btns" onclick="closeSplitEdit()" data-i18n="btn_iptal">İptal</button></div>
+</div></div>
+
 <!-- BIGLION KUPONU DÜZENLE MODAL -->
 <div class="mov h" id="big-em-ov">
 <div class="modal">
@@ -1805,7 +1819,7 @@ function renderII(x){
     <div class="ilft"><div class="idot ${isg?'gider':isv?'virman':x.tip}">${t.i}</div>
     <div class="iinf"><div class="itp ${isg?'gider':isv?'virman':x.tip}">${lbl}</div>${notHtml}<div class="idate">${fd(x.tarih)}</div></div></div>
     <div class="irgt"><div class="itut ${tutCls}">${prefix}${para(x.tutar)}</div>
-      ${issp?'':`<button class="isil" style="color:var(--mu);" onclick="openIM(${x.id})">✏️</button>`}
+      ${issp?`<button class="isil" style="color:var(--mu);" onclick="openSplitEdit('${x.grup}')">✏️</button>`:`<button class="isil" style="color:var(--mu);" onclick="openIM(${x.id})">✏️</button>`}
       <button class="isil" onclick="${delOnclick}">✕</button>
     </div>
   </div>`;
@@ -1815,6 +1829,64 @@ function silSplit(idsCsv){
   const ids=idsCsv.split(',').map(Number);
   D.isl=D.isl.filter(x=>!ids.includes(x.id));
   save();renderAll();
+  if(document.getElementById('page-islemler').classList.contains('on'))renderTumI();
+  if(document.getElementById('page-giderler').classList.contains('on'))renderG();
+}
+let modalSplitGrup=null;
+function openSplitEdit(grup){
+  modalSplitGrup=grup;
+  const MT=['pos','nf','nfs','bir'];
+  const parcalar=D.isl.filter(x=>x.grup===grup&&MT.includes(x.tip));
+  if(!parcalar.length)return;
+  document.getElementById('sm-tarih').value=parcalar[0].tarih;
+  document.getElementById('sm-not').value=parcalar[0].not||'';
+  document.getElementById('sm-pos').value=(parcalar.find(x=>x.tip==='pos')||{}).tutar||'';
+  document.getElementById('sm-nf').value=(parcalar.find(x=>x.tip==='nf')||{}).tutar||'';
+  document.getElementById('sm-nfs').value=(parcalar.find(x=>x.tip==='nfs')||{}).tutar||'';
+  document.getElementById('sm-bir').value=(parcalar.find(x=>x.tip==='bir')||{}).tutar||'';
+  document.getElementById('sm-ov').classList.remove('h');
+}
+function closeSplitEdit(){document.getElementById('sm-ov').classList.add('h');modalSplitGrup=null;}
+function kaydetSplitEdit(){
+  const grup=modalSplitGrup;
+  if(!grup)return;
+  const tarih=document.getElementById('sm-tarih').value;
+  const notVal=document.getElementById('sm-not').value.trim();
+  const yeni={pos:parseFloat(document.getElementById('sm-pos').value)||0,nf:parseFloat(document.getElementById('sm-nf').value)||0,nfs:parseFloat(document.getElementById('sm-nfs').value)||0,bir:parseFloat(document.getElementById('sm-bir').value)||0};
+  if(!tarih){alert('Tarih girin.');return;}
+  if(yeni.pos<=0&&yeni.nf<=0&&yeni.nfs<=0&&yeni.bir<=0){alert('En az bir ödeme yöntemine tutar girin.');return;}
+  const GKASA={pos:'pos',nf:'nak',nfs:'nak',bir:'bir'};
+  const eskiPos=D.isl.find(x=>x.grup===grup&&x.tip==='pos');
+  const eskiPosTutar=eskiPos?eskiPos.tutar:0;
+  const eskiKom=D.isl.find(x=>x.grup===grup&&x.tip==='gider');
+  ['pos','nf','nfs','bir'].forEach(tip=>{
+    const mevcut=D.isl.find(x=>x.grup===grup&&x.tip===tip);
+    const val=yeni[tip];
+    if(val>0){
+      if(mevcut){mevcut.tutar=val;mevcut.tarih=tarih;mevcut.not=notVal;}
+      else{D.isl.unshift({id:Date.now()+Math.floor(Math.random()*1000),tip,tutar:val,tarih,not:notVal,gkasa:GKASA[tip],grup});}
+    } else if(mevcut){
+      D.isl=D.isl.filter(x=>x.id!==mevcut.id);
+    }
+  });
+  // POS komisyonunu yeni POS tutarına göre orantılı güncelle
+  if(yeni.pos>0){
+    if(eskiKom){
+      const oranBaz=eskiPosTutar>0?eskiKom.tutar/eskiPosTutar:(D.par.posOran/100);
+      eskiKom.tutar=+(oranBaz*yeni.pos).toFixed(2);
+      eskiKom.tarih=nextDay(tarih);
+      eskiKom.not=`Komisyon – ${notVal}`;
+    } else {
+      const kom=+(yeni.pos*(D.par.posOran||0)/100).toFixed(2);
+      if(kom>0){
+        D.isl.unshift({id:Date.now()+Math.floor(Math.random()*1000)+1,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${notVal}`,gkasa:'pos',grup});
+      }
+    }
+  } else if(eskiKom){
+    D.isl=D.isl.filter(x=>x.id!==eskiKom.id);
+  }
+  D.isl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
+  save();closeSplitEdit();renderAll();
   if(document.getElementById('page-islemler').classList.contains('on'))renderTumI();
   if(document.getElementById('page-giderler').classList.contains('on'))renderG();
 }
