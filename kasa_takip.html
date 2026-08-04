@@ -65,10 +65,10 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-si
 .ilft{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
 .idot{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .idot.pos{background:rgba(77,171,247,.15);}.idot.nf{background:rgba(56,217,169,.15);}.idot.nfs{background:rgba(255,169,77,.15);}
-.idot.bir{background:rgba(204,93,232,.15);}.idot.yurt{background:rgba(255,212,59,.15);}.idot.gider{background:rgba(255,107,107,.15);}.idot.virman{background:rgba(108,99,255,.15);}
+.idot.bir{background:rgba(204,93,232,.15);}.idot.yurt{background:rgba(255,212,59,.15);}.idot.gider{background:rgba(255,107,107,.15);}.idot.virman{background:rgba(108,99,255,.15);}.idot.split{background:rgba(56,217,169,.15);}
 .iinf{flex:1;min-width:0;}
 .itp{font-size:11px;font-weight:600;}
-.itp.pos{color:var(--bl);}.itp.nf{color:var(--gr);}.itp.nfs{color:var(--or);}.itp.bir{color:var(--pu);}.itp.yurt{color:var(--warn);}.itp.gider{color:var(--err);}.itp.virman{color:var(--ac);}
+.itp.pos{color:var(--bl);}.itp.nf{color:var(--gr);}.itp.nfs{color:var(--or);}.itp.bir{color:var(--pu);}.itp.yurt{color:var(--warn);}.itp.gider{color:var(--err);}.itp.virman{color:var(--ac);}.itp.split{color:var(--gr);}
 .inot{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 .idate{font-size:10px;color:var(--mu);margin-top:1px;}
 .irgt{text-align:right;flex-shrink:0;display:flex;align-items:center;gap:3px;}
@@ -169,7 +169,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-si
 .mov.h{display:none;}
 .modal{background:var(--sf);border-radius:18px 18px 0 0;padding:18px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;}
 .mtl{font-size:14px;font-weight:700;margin-bottom:13px;}
-.mact{display:flex;gap:7px;margin-top:13px;}
+.mact{display:flex;gap:7px;margin-top:13px;position:sticky;bottom:0;background:var(--sf);padding-top:8px;z-index:5;}
 .divl{height:1px;background:var(--bd);margin:11px 0;}
 .logit{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd);font-size:11px;}
 .logit:last-child{border-bottom:none;}
@@ -383,7 +383,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     </div>
     <div class="step" id="st-tutar">
       <div class="r2">
-        <div class="ig"><label id="f-tlbl">Tutar (₽)</label><input type="number" id="f-tutar" placeholder="0" step="0.01"></div>
+        <div class="ig" id="f-tutar-wrap"><label id="f-tlbl">Tutar (₽)</label><input type="number" id="f-tutar" placeholder="0" step="0.01"></div>
         <div class="ig" style="max-width:128px;"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="f-tarih"></div>
       </div>
       <div class="ig"><label data-i18n="not_ist">Not (isteğe bağlı)</label><textarea id="f-not" placeholder="Ek bilgi..."></textarea></div>
@@ -1209,6 +1209,7 @@ function selTur(tur,btn){
   document.getElementById('f-posbox').classList.remove('on');
   document.getElementById('f-posres').innerHTML='';
   document.getElementById('f-tutar').value='';
+  document.getElementById('f-tutar').readOnly=false;
   document.getElementById('f-tlbl').textContent='Tutar (₽)';
   document.getElementById('f-split-on').checked=false;
   sw('st-odeme-split',false);
@@ -1254,19 +1255,24 @@ function selOd(btn){
 function toggleSplitOdeme(){
   const on=document.getElementById('f-split-on').checked;
   const singleBtns=document.getElementById('f-odeme-single-btns');
+  const ftutar=document.getElementById('f-tutar');
   if(on){
     singleBtns.style.display='none';
     document.querySelectorAll('#st-odeme .sb').forEach(b=>b.classList.remove('on'));
     document.getElementById('f-posbox').classList.remove('on');
     F.odeme=null;
     sw('st-odeme-split',true);
-    sw('st-tutar',false);
-    document.getElementById('f-tutar').value='';
+    sw('st-tutar',true);
+    ftutar.value='';
+    ftutar.readOnly=true;
+    document.getElementById('f-tlbl').textContent='Tutar (₽) — otomatik hesaplanır';
     splitTotalHes();
   } else {
     singleBtns.style.display='';
     sw('st-odeme-split',false);
     sw('st-tutar',true);
+    ftutar.readOnly=false;
+    document.getElementById('f-tlbl').textContent='Tutar (₽)';
   }
 }
 function splitTotalHes(){
@@ -1435,17 +1441,18 @@ function ekleI(){
     const bir=parseFloat(document.getElementById('f-split-bir').value)||0;
     if(pos<=0&&nf<=0&&nfs<=0&&bir<=0){alert('En az bir ödeme yöntemine tutar girin.');return;}
     let baseId=Date.now();
+    const grup='sp'+baseId;
     if(pos>0){
       const oran=parseFloat(document.getElementById('f-split-posoran').value)||D.par.posOran;
       const kom=+(pos*oran/100).toFixed(2);
-      D.isl.unshift({id:baseId++,tip:'pos',tutar:pos,tarih,not:label,gkasa:'pos'});
+      D.isl.unshift({id:baseId++,tip:'pos',tutar:pos,tarih,not:label,gkasa:'pos',grup});
       if(kom>0){
-        D.isl.unshift({id:baseId++,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos'});
+        D.isl.unshift({id:baseId++,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos',grup});
       }
     }
-    if(nf>0) D.isl.unshift({id:baseId++,tip:'nf',tutar:nf,tarih,not:label,gkasa:'nak'});
-    if(nfs>0) D.isl.unshift({id:baseId++,tip:'nfs',tutar:nfs,tarih,not:label,gkasa:'nak'});
-    if(bir>0) D.isl.unshift({id:baseId++,tip:'bir',tutar:bir,tarih,not:label,gkasa:'bir'});
+    if(nf>0) D.isl.unshift({id:baseId++,tip:'nf',tutar:nf,tarih,not:label,gkasa:'nak',grup});
+    if(nfs>0) D.isl.unshift({id:baseId++,tip:'nfs',tutar:nfs,tarih,not:label,gkasa:'nak',grup});
+    if(bir>0) D.isl.unshift({id:baseId++,tip:'bir',tutar:bir,tarih,not:label,gkasa:'bir',grup});
     D.isl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
     save();renderAll();resetF();return;
   }
@@ -1764,28 +1771,57 @@ function dilSec(d){
 const TIPLER={
   pos:{l:'POS',i:'🏦'},nf:{l:'Nakit Fişli',i:'🧾'},nfs:{l:'Nakit Fişsiz',i:'💵'},
   bir:{l:'Bireysel',i:'👤'},yurt:{l:'Diğer Gelirler',i:'🌍'},
-  gider:{l:'Gider',i:'🔴'},virman:{l:'Virman',i:'🔄'}
+  gider:{l:'Gider',i:'🔴'},virman:{l:'Virman',i:'🔄'},split:{l:'Bölünmüş Ödeme',i:'🔀'}
 };
+
+// Bölünmüş ödemeyle oluşturulan pos/nf/nfs/bir satırlarını TEK bir görünür kayda indirger,
+// böylece "3 kasa seçtim" gibi durumlarda 3 ayrı masaj/ödeme yapılmış gibi görünmez.
+function groupSplitList(list){
+  const out=[],seen=new Set(),MT=['pos','nf','nfs','bir'];
+  for(const x of list){
+    if(x.grup&&MT.includes(x.tip)){
+      if(seen.has(x.grup))continue;
+      seen.add(x.grup);
+      const parcalar=list.filter(y=>y.grup===x.grup&&MT.includes(y.tip));
+      const toplam=+parcalar.reduce((s,y)=>s+y.tutar,0).toFixed(2);
+      const detay=parcalar.map(y=>`${TIPLER[y.tip].l}: ${para(y.tutar)}`).join(' + ');
+      out.push({...x,tip:'split',tutar:toplam,_splitDetay:detay,_splitIds:parcalar.map(y=>y.id)});
+    } else {
+      out.push(x);
+    }
+  }
+  return out;
+}
 
 function renderII(x){
   const t=TIPLER[x.tip]||{l:x.tip,i:'•'};
-  const isg=x.tip==='gider', isv=x.tip==='virman';
+  const isg=x.tip==='gider', isv=x.tip==='virman', issp=x.tip==='split';
   const lbl=isg&&x.gkat?x.gkat:isv?`Virman ${x.vHar==='giris'?'Giriş':'Çıkış'} (${gkIsim(x.gkasa)})`:t.l;
   const tutCls=isv?(x.vHar==='giris'?'p':'m'):isg?'m':'p';
   const prefix=isv?(x.vHar==='giris'?'+':'-'):isg?'-':'+';
+  const notHtml=issp?`<div class="inot">${x._splitDetay}${x.not?' · '+x.not:''}</div>`:(x.not?`<div class="inot">${x.not}</div>`:'');
+  const delOnclick=issp?`silSplit('${x._splitIds.join(',')}')`:`silI(${x.id})`;
   return`<div class="ii">
-    <div class="ilft"><div class="idot ${x.tip}">${t.i}</div>
-    <div class="iinf"><div class="itp ${x.tip}">${lbl}</div>${x.not?`<div class="inot">${x.not}</div>`:''}<div class="idate">${fd(x.tarih)}</div></div></div>
+    <div class="ilft"><div class="idot ${isg?'gider':isv?'virman':x.tip}">${t.i}</div>
+    <div class="iinf"><div class="itp ${isg?'gider':isv?'virman':x.tip}">${lbl}</div>${notHtml}<div class="idate">${fd(x.tarih)}</div></div></div>
     <div class="irgt"><div class="itut ${tutCls}">${prefix}${para(x.tutar)}</div>
-      <button class="isil" style="color:var(--mu);" onclick="openIM(${x.id})">✏️</button>
-      <button class="isil" onclick="silI(${x.id})">✕</button>
+      ${issp?'':`<button class="isil" style="color:var(--mu);" onclick="openIM(${x.id})">✏️</button>`}
+      <button class="isil" onclick="${delOnclick}">✕</button>
     </div>
   </div>`;
+}
+function silSplit(idsCsv){
+  if(!confirm('Bu bölünmüş ödemenin tüm parçalarını (ve varsa POS komisyonunu) silmek istediğine emin misin?'))return;
+  const ids=idsCsv.split(',').map(Number);
+  D.isl=D.isl.filter(x=>!ids.includes(x.id));
+  save();renderAll();
+  if(document.getElementById('page-islemler').classList.contains('on'))renderTumI();
+  if(document.getElementById('page-giderler').classList.contains('on'))renderG();
 }
 
 function renderSon(){
   const el=document.getElementById('son-i');
-  const s=sortedI().slice(0,6);
+  const s=groupSplitList(sortedI()).slice(0,6);
   el.innerHTML=s.length?s.map(renderII).join(''):'<div class="bos"><div class="bosi">📭</div><p>Henüz işlem yok.</p></div>';
 }
 
@@ -1825,9 +1861,11 @@ function renderTumI(){
     totEl.textContent=(top<0?'-':'+')+para(top);
     totEl.style.color=top<0?'var(--err)':(aktifFltI==='virman'?'var(--ac)':'var(--gr)');
     document.getElementById('i-tot-lbl').textContent=I_FLT_LBL[aktifFltI]||'Toplam';
-    document.getElementById('i-sub').textContent=l.length+' işlem';
+    const gl=groupSplitList(l);
+    document.getElementById('i-sub').textContent=gl.length+' işlem';
   }
-  el.innerHTML=l.length?l.map(renderII).join(''):'<div class="empty">Bu kategoride işlem yok.</div>';
+  const gl2=groupSplitList(l);
+  el.innerHTML=gl2.length?gl2.map(renderII).join(''):'<div class="empty">Bu kategoride işlem yok.</div>';
 }
 
 function fltI(btn){
@@ -2129,6 +2167,7 @@ function openRVM(id){
   document.getElementById('rv-split-posbox').style.display='none';
   document.getElementById('rv-mtl').textContent=`${modalRV.isim} — ${modalRV.saat}`;
   document.getElementById('rv-m-tutar').value=modalRV.fiyat||'';
+  document.getElementById('rv-m-tutar').readOnly=false;
   document.getElementById('rv-m-det').innerHTML=`<div style="font-weight:600;font-size:13px;">${modalRV.isim}</div>
     <div style="font-size:11px;color:var(--mu);margin-top:3px;">${modalRV.hiz}${modalRV.plat?' · '+modalRV.plat:''} · ${modalRV.sure} dk${modalRV.not?' · '+modalRV.not:''}</div>
     ${modalRV.fiyat?`<div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gr);margin-top:5px;">${para(modalRV.fiyat)}</div>`:''}`;
@@ -2157,19 +2196,22 @@ function rvPosHes(){
 }
 function toggleRvSplitOdeme(){
   const on=document.getElementById('rv-split-on').checked;
+  const ftutar=document.getElementById('rv-m-tutar');
   if(on){
     document.getElementById('rv-odeme-single-btns').style.display='none';
     document.querySelectorAll('#rv-ov .sb').forEach(b=>b.classList.remove('on'));
     document.getElementById('rv-posbox').classList.remove('on');
     rvSelOd=null;
     sw('rv-odeme-split',true);
-    document.getElementById('rv-tutar-step').style.display='none';
-    document.getElementById('rv-m-tutar').value='';
+    document.getElementById('rv-tutar-step').style.display='block';
+    ftutar.value='';
+    ftutar.readOnly=true;
     rvSplitTotalHes();
   } else {
     document.getElementById('rv-odeme-single-btns').style.display='';
     sw('rv-odeme-split',false);
     document.getElementById('rv-tutar-step').style.display='block';
+    ftutar.readOnly=false;
   }
 }
 function rvSplitTotalHes(){
@@ -2234,17 +2276,18 @@ function rvYap(){
     const bir=parseFloat(document.getElementById('rv-split-bir').value)||0;
     if(pos<=0&&nf<=0&&nfs<=0&&bir<=0){alert('En az bir ödeme yöntemine tutar girin.');return;}
     let baseId=Date.now();
+    const grup='sp'+baseId;
     if(pos>0){
       const oran=parseFloat(document.getElementById('rv-split-posoran').value)||D.par.posOran;
       const kom=+(pos*oran/100).toFixed(2);
-      D.isl.unshift({id:baseId++,tip:'pos',tutar:pos,tarih,not:label,gkasa:'pos'});
+      D.isl.unshift({id:baseId++,tip:'pos',tutar:pos,tarih,not:label,gkasa:'pos',grup});
       if(kom>0){
-        D.isl.unshift({id:baseId++,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos'});
+        D.isl.unshift({id:baseId++,tip:'gider',tutar:kom,tarih:nextDay(tarih),gkat:'CBerBiznis / POS Komisyon',anaKat:'CBerBiznis',not:`Komisyon – ${label}`,gkasa:'pos',grup});
       }
     }
-    if(nf>0) D.isl.unshift({id:baseId++,tip:'nf',tutar:nf,tarih,not:label,gkasa:'nak'});
-    if(nfs>0) D.isl.unshift({id:baseId++,tip:'nfs',tutar:nfs,tarih,not:label,gkasa:'nak'});
-    if(bir>0) D.isl.unshift({id:baseId++,tip:'bir',tutar:bir,tarih,not:label,gkasa:'bir'});
+    if(nf>0) D.isl.unshift({id:baseId++,tip:'nf',tutar:nf,tarih,not:label,gkasa:'nak',grup});
+    if(nfs>0) D.isl.unshift({id:baseId++,tip:'nfs',tutar:nfs,tarih,not:label,gkasa:'nak',grup});
+    if(bir>0) D.isl.unshift({id:baseId++,tip:'bir',tutar:bir,tarih,not:label,gkasa:'bir',grup});
     D.isl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
     const rvS=D.rv.find(r=>r.id===modalRV.id);if(rvS)rvS.yapildi=true;
     save();closeRVM();renderAll();renderBugunRV();
