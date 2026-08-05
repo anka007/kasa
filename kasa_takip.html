@@ -2069,6 +2069,7 @@ function kaydetGiderSplitEdit(){
 }
 
 function renderSon(){
+  const el=document.getElementById('son-i');
   const s=groupSplitList(sortedI()).slice(0,6);
   el.innerHTML=s.length?s.map(renderII).join(''):'<div class="bos"><div class="bosi">📭</div><p>Henüz işlem yok.</p></div>';
 }
