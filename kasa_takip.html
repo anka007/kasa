@@ -65,10 +65,10 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-si
 .ilft{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
 .idot{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .idot.pos{background:rgba(77,171,247,.15);}.idot.nf{background:rgba(56,217,169,.15);}.idot.nfs{background:rgba(255,169,77,.15);}
-.idot.bir{background:rgba(204,93,232,.15);}.idot.yurt{background:rgba(255,212,59,.15);}.idot.gider{background:rgba(255,107,107,.15);}.idot.virman{background:rgba(108,99,255,.15);}.idot.split{background:rgba(56,217,169,.15);}
+.idot.bir{background:rgba(204,93,232,.15);}.idot.yurt{background:rgba(255,212,59,.15);}.idot.gider{background:rgba(255,107,107,.15);}.idot.virman{background:rgba(108,99,255,.15);}.idot.split{background:rgba(56,217,169,.15);}.idot.gidersplit{background:rgba(255,107,107,.15);}
 .iinf{flex:1;min-width:0;}
 .itp{font-size:11px;font-weight:600;}
-.itp.pos{color:var(--bl);}.itp.nf{color:var(--gr);}.itp.nfs{color:var(--or);}.itp.bir{color:var(--pu);}.itp.yurt{color:var(--warn);}.itp.gider{color:var(--err);}.itp.virman{color:var(--ac);}.itp.split{color:var(--gr);}
+.itp.pos{color:var(--bl);}.itp.nf{color:var(--gr);}.itp.nfs{color:var(--or);}.itp.bir{color:var(--pu);}.itp.yurt{color:var(--warn);}.itp.gider{color:var(--err);}.itp.virman{color:var(--ac);}.itp.split{color:var(--gr);}.itp.gidersplit{color:var(--err);}
 .inot{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 .idate{font-size:10px;color:var(--mu);margin-top:1px;}
 .irgt{text-align:right;flex-shrink:0;display:flex;align-items:center;gap:3px;}
@@ -343,6 +343,19 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
         <button class="sb" data-gk="yurt" onclick="selGK(this)"><span class="si">🌍</span>Diğer Gelir<br><small id="gk-yurt-bak" style="font-weight:400;font-size:10px;"></small></button>
       </div>
       <div id="gkasa-warn" style="display:none;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--err);margin-top:6px;"></div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:9px;margin-bottom:9px;font-size:12px;color:var(--mu);cursor:pointer;">
+        <input type="checkbox" id="gd-split-on" onchange="toggleGiderSplit()" style="width:15px;height:15px;">
+        🔀 Birden fazla kasadan ödendi (ör. kısmen nakit, kısmen kart)
+      </label>
+      <div class="step" id="st-gkasa-split">
+        <div class="slbl">Kasa Dağılımı</div>
+        <div class="ig"><label>🏦 POS (₽) <small id="gd-split-pos-bak" style="color:var(--mu);font-weight:400;"></small></label><input type="number" id="gd-split-pos" step="0.01" placeholder="0" oninput="giderSplitTotalHes()"></div>
+        <div class="ig"><label>💰 Nakit (₽) <small id="gd-split-nak-bak" style="color:var(--mu);font-weight:400;"></small></label><input type="number" id="gd-split-nak" step="0.01" placeholder="0" oninput="giderSplitTotalHes()"></div>
+        <div class="ig"><label>👤 Bireysel (₽) <small id="gd-split-bir-bak" style="color:var(--mu);font-weight:400;"></small></label><input type="number" id="gd-split-bir" step="0.01" placeholder="0" oninput="giderSplitTotalHes()"></div>
+        <div class="ig"><label>🌍 Diğer Gelir (₽) <small id="gd-split-yurt-bak" style="color:var(--mu);font-weight:400;"></small></label><input type="number" id="gd-split-yurt" step="0.01" placeholder="0" oninput="giderSplitTotalHes()"></div>
+        <div class="posres" id="gd-split-toplam" style="margin-top:2px;font-weight:600;"></div>
+        <div id="gd-split-warn" style="display:none;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--err);margin-top:6px;"></div>
+      </div>
     </div>
 
     <!-- Virman -->
@@ -731,17 +744,31 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 </div></div>
 
 <!-- BÖLÜNMÜŞ ÖDEME DÜZENLE MODAL -->
-<div class="mov h" id="sm-ov">
+<div class="mov h" id="spm-ov">
 <div class="modal">
   <div class="mtl">🔀 Bölünmüş Ödemeyi Düzenle</div>
-  <div class="ig"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="sm-tarih"></div>
-  <div class="ig"><label>🏦 POS (₽)</label><input type="number" id="sm-pos" step="0.01" placeholder="0"></div>
-  <div class="ig"><label>🧾 Nakit Fişli (₽)</label><input type="number" id="sm-nf" step="0.01" placeholder="0"></div>
-  <div class="ig"><label>💵 Nakit Fişsiz (₽)</label><input type="number" id="sm-nfs" step="0.01" placeholder="0"></div>
-  <div class="ig"><label>👤 Bireysel (₽)</label><input type="number" id="sm-bir" step="0.01" placeholder="0"></div>
-  <div class="ig"><label data-i18n="not_aciklama">Not / Açıklama</label><input type="text" id="sm-not" placeholder="Ek bilgi..."></div>
+  <div class="ig"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="spm-tarih"></div>
+  <div class="ig"><label>🏦 POS (₽)</label><input type="number" id="spm-pos" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>🧾 Nakit Fişli (₽)</label><input type="number" id="spm-nf" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>💵 Nakit Fişsiz (₽)</label><input type="number" id="spm-nfs" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>👤 Bireysel (₽)</label><input type="number" id="spm-bir" step="0.01" placeholder="0"></div>
+  <div class="ig"><label data-i18n="not_aciklama">Not / Açıklama</label><input type="text" id="spm-not" placeholder="Ek bilgi..."></div>
   <div style="font-size:11px;color:var(--mu);margin-bottom:9px;">Bir alanı 0 / boş bırakırsanız o ödeme yöntemi bu işlemden kaldırılır. POS tutarını değiştirirseniz, varsa bağlı komisyon gideri de yeni tutara göre orantılı olarak güncellenir.</div>
   <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetSplitEdit()">✓ Kaydet</button><button class="btns" onclick="closeSplitEdit()" data-i18n="btn_iptal">İptal</button></div>
+</div></div>
+
+<!-- BÖLÜNMÜŞ GİDER DÜZENLE MODAL -->
+<div class="mov h" id="gspm-ov">
+<div class="modal">
+  <div class="mtl">🔀 Bölünmüş Gideri Düzenle</div>
+  <div class="ig"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="gspm-tarih"></div>
+  <div class="ig"><label>🏦 POS (₽)</label><input type="number" id="gspm-pos" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>💰 Nakit (₽)</label><input type="number" id="gspm-nak" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>👤 Bireysel (₽)</label><input type="number" id="gspm-bir" step="0.01" placeholder="0"></div>
+  <div class="ig"><label>🌍 Diğer Gelir (₽)</label><input type="number" id="gspm-yurt" step="0.01" placeholder="0"></div>
+  <div class="ig"><label data-i18n="not_aciklama">Not / Açıklama</label><input type="text" id="gspm-not" placeholder="Ek bilgi..."></div>
+  <div style="font-size:11px;color:var(--mu);margin-bottom:9px;">Bir alanı 0 / boş bırakırsanız o kasadan çıkan tutar bu giderden kaldırılır.</div>
+  <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetGiderSplitEdit()">✓ Kaydet</button><button class="btns" onclick="closeGiderSplitEdit()" data-i18n="btn_iptal">İptal</button></div>
 </div></div>
 
 <!-- BIGLION KUPONU DÜZENLE MODAL -->
@@ -1210,7 +1237,7 @@ function renderKasalar(){
 }
 
 // ===================== FORM AKIŞI =====================
-const ALL_STEPS=['st-plat','st-hiz','st-sure','st-odeme','st-odeme-split','st-acat','st-alcat','st-gkasa','st-virman','st-yurt-kaynak','st-tutar'];
+const ALL_STEPS=['st-plat','st-hiz','st-sure','st-odeme','st-odeme-split','st-acat','st-alcat','st-gkasa','st-gkasa-split','st-virman','st-yurt-kaynak','st-tutar'];
 
 function selTur(tur,btn){
   document.querySelectorAll('#st1 .sb').forEach(b=>b.classList.remove('on'));
@@ -1231,6 +1258,12 @@ function selTur(tur,btn){
   ['f-split-pos','f-split-nf','f-split-nfs','f-split-bir','f-split-posoran'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('f-split-toplam').innerHTML='';
   document.getElementById('f-split-posbox').style.display='none';
+  document.getElementById('gd-split-on').checked=false;
+  sw('st-gkasa-split',false);
+  document.getElementById('gkasa-btns').style.display='';
+  ['gd-split-pos','gd-split-nak','gd-split-bir','gd-split-yurt'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('gd-split-toplam').innerHTML='';
+  document.getElementById('gd-split-warn').style.display='none';
 
   if(tur==='masaj'){
     sw('st-plat',true);sw('st-hiz',true);sw('st-sure',true);sw('st-odeme',true);sw('st-tutar',true);
@@ -1331,6 +1364,44 @@ function selGK(btn){
   btn.classList.add('on'); F.gkasa=btn.dataset.gk;
   document.getElementById('gkasa-warn').style.display='none';
 }
+function toggleGiderSplit(){
+  const on=document.getElementById('gd-split-on').checked;
+  const ftutar=document.getElementById('f-tutar');
+  if(on){
+    document.getElementById('gkasa-btns').style.display='none';
+    document.querySelectorAll('#st-gkasa .sb').forEach(b=>b.classList.remove('on'));
+    F.gkasa=null;
+    document.getElementById('gkasa-warn').style.display='none';
+    sw('st-gkasa-split',true);
+    ftutar.value='';
+    ftutar.readOnly=true;
+    document.getElementById('f-tlbl').textContent='Tutar (₽) — otomatik hesaplanır';
+    giderSplitTotalHes();
+  } else {
+    document.getElementById('gkasa-btns').style.display='';
+    sw('st-gkasa-split',false);
+    ftutar.readOnly=false;
+    document.getElementById('f-tlbl').textContent='Tutar (₽)';
+  }
+}
+function giderSplitTotalHes(){
+  const k=kasaBak();
+  const pos=parseFloat(document.getElementById('gd-split-pos').value)||0;
+  const nak=parseFloat(document.getElementById('gd-split-nak').value)||0;
+  const bir=parseFloat(document.getElementById('gd-split-bir').value)||0;
+  const yurt=parseFloat(document.getElementById('gd-split-yurt').value)||0;
+  const toplam=+(pos+nak+bir+yurt).toFixed(2);
+  document.getElementById('f-tutar').value=toplam;
+  document.getElementById('gd-split-toplam').innerHTML=toplam>0?`Toplam: <strong>${para(toplam)}</strong>`:'';
+  const asimlar=[];
+  if(pos>k.pos+0.01) asimlar.push(`POS'ta ${para(k.pos)} var`);
+  if(nak>k.nak+0.01) asimlar.push(`Nakit'te ${para(k.nak)} var`);
+  if(bir>k.bir+0.01) asimlar.push(`Bireysel'de ${para(k.bir)} var`);
+  if(yurt>k.yurt+0.01) asimlar.push(`Diğer Gelir'de ${para(k.yurt)} var`);
+  const warn=document.getElementById('gd-split-warn');
+  if(asimlar.length){warn.style.display='block';warn.textContent='Yetersiz bakiye! '+asimlar.join(', ')+'.';}
+  else warn.style.display='none';
+}
 
 function updateGKasaBakiye(){
   const k=kasaBak();
@@ -1339,6 +1410,10 @@ function updateGKasaBakiye(){
   Object.keys(labels).forEach(gk=>{
     const el=document.getElementById('gk-'+gk+'-bak');
     if(el) el.textContent=paraS(vals[gk]);
+  });
+  ['pos','nak','bir','yurt'].forEach(gk=>{
+    const el=document.getElementById('gd-split-'+gk+'-bak');
+    if(el) el.textContent='bakiye: '+paraS(vals[gk]);
   });
 }
 
@@ -1414,13 +1489,39 @@ function ekleI(){
 
   if(F.tur==='gider'){
     if(!F.anakat){alert('Ana kategori seçin.');return;}
-    if(!F.gkasa){alert('Hangi kasadan çıktığını seçin.');return;}
     const alt=document.getElementById('f-alcat').value.trim();
     const gkat=alt?`${F.anakat} / ${alt}`:F.anakat;
     if(alt&&!(D.alkat[F.anakat]||[]).includes(alt)){
       if(!D.alkat[F.anakat])D.alkat[F.anakat]=[];
       D.alkat[F.anakat].push(alt);
     }
+    const giderSplitOn=document.getElementById('gd-split-on').checked;
+    if(giderSplitOn){
+      const k=kasaBak();
+      const parts={pos:parseFloat(document.getElementById('gd-split-pos').value)||0,
+                   nak:parseFloat(document.getElementById('gd-split-nak').value)||0,
+                   bir:parseFloat(document.getElementById('gd-split-bir').value)||0,
+                   yurt:parseFloat(document.getElementById('gd-split-yurt').value)||0};
+      if(parts.pos<=0&&parts.nak<=0&&parts.bir<=0&&parts.yurt<=0){alert('En az bir kasaya tutar girin.');return;}
+      const asimlar=[];
+      if(parts.pos>k.pos+0.01) asimlar.push(`POS'ta ${para(k.pos)} var`);
+      if(parts.nak>k.nak+0.01) asimlar.push(`Nakit'te ${para(k.nak)} var`);
+      if(parts.bir>k.bir+0.01) asimlar.push(`Bireysel'de ${para(k.bir)} var`);
+      if(parts.yurt>k.yurt+0.01) asimlar.push(`Diğer Gelir'de ${para(k.yurt)} var`);
+      if(asimlar.length){
+        const warn=document.getElementById('gd-split-warn');
+        warn.style.display='block';warn.textContent='Yetersiz bakiye! '+asimlar.join(', ')+'.';
+        return;
+      }
+      let baseId=Date.now();
+      const giderGrup='gg'+baseId;
+      ['pos','nak','bir','yurt'].forEach(gk=>{
+        if(parts[gk]>0) D.isl.unshift({id:baseId++,tip:'gider',tutar:parts[gk],tarih,not,gkat,anaKat:F.anakat,gkasa:gk,giderGrup});
+      });
+      D.isl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
+      save();renderAll();resetF();return;
+    }
+    if(!F.gkasa){alert('Hangi kasadan çıktığını seçin.');return;}
     // Bakiye kontrolü
     const _k=kasaBak();
     const _bak=_k[F.gkasa]||0;
@@ -1506,6 +1607,16 @@ function resetF(){
     const e=document.getElementById(id);if(e)e.value='';
   });
   document.getElementById('f-tlbl').textContent='Tutar (₽)';
+  document.getElementById('f-tutar').readOnly=false;
+  document.getElementById('f-split-on').checked=false;
+  document.getElementById('gd-split-on').checked=false;
+  document.getElementById('gkasa-btns').style.display='';
+  const fosb=document.getElementById('f-odeme-single-btns');if(fosb)fosb.style.display='';
+  ['f-split-pos','f-split-nf','f-split-nfs','f-split-bir','f-split-posoran','gd-split-pos','gd-split-nak','gd-split-bir','gd-split-yurt'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('f-split-toplam').innerHTML='';
+  document.getElementById('f-split-posbox').style.display='none';
+  document.getElementById('gd-split-toplam').innerHTML='';
+  document.getElementById('gd-split-warn').style.display='none';
 }
 
 let modalIslem=null;
@@ -1785,13 +1896,15 @@ function dilSec(d){
 const TIPLER={
   pos:{l:'POS',i:'🏦'},nf:{l:'Nakit Fişli',i:'🧾'},nfs:{l:'Nakit Fişsiz',i:'💵'},
   bir:{l:'Bireysel',i:'👤'},yurt:{l:'Diğer Gelirler',i:'🌍'},
-  gider:{l:'Gider',i:'🔴'},virman:{l:'Virman',i:'🔄'},split:{l:'Bölünmüş Ödeme',i:'🔀'}
+  gider:{l:'Gider',i:'🔴'},virman:{l:'Virman',i:'🔄'},split:{l:'Bölünmüş Ödeme',i:'🔀'},gidersplit:{l:'Bölünmüş Gider',i:'🔀'}
 };
+const GKASA_L={pos:'POS',nak:'Nakit',bir:'Bireysel',yurt:'Diğer Gelir'};
 
-// Bölünmüş ödemeyle oluşturulan pos/nf/nfs/bir satırlarını TEK bir görünür kayda indirger,
-// böylece "3 kasa seçtim" gibi durumlarda 3 ayrı masaj/ödeme yapılmış gibi görünmez.
+// Bölünmüş ödemeyle oluşturulan pos/nf/nfs/bir satırlarını (gelir) ve birden fazla
+// kasadan çıkan gider satırlarını TEK bir görünür kayda indirger, böylece "3 kasa
+// seçtim" gibi durumlarda 3 ayrı masaj/ödeme veya 3 ayrı gider yapılmış gibi görünmez.
 function groupSplitList(list){
-  const out=[],seen=new Set(),MT=['pos','nf','nfs','bir'];
+  const out=[],seen=new Set(),seenG=new Set(),MT=['pos','nf','nfs','bir'];
   for(const x of list){
     if(x.grup&&MT.includes(x.tip)){
       if(seen.has(x.grup))continue;
@@ -1800,6 +1913,13 @@ function groupSplitList(list){
       const toplam=+parcalar.reduce((s,y)=>s+y.tutar,0).toFixed(2);
       const detay=parcalar.map(y=>`${TIPLER[y.tip].l}: ${para(y.tutar)}`).join(' + ');
       out.push({...x,tip:'split',tutar:toplam,_splitDetay:detay,_splitIds:parcalar.map(y=>y.id)});
+    } else if(x.giderGrup&&x.tip==='gider'){
+      if(seenG.has(x.giderGrup))continue;
+      seenG.add(x.giderGrup);
+      const parcalar=list.filter(y=>y.giderGrup===x.giderGrup&&y.tip==='gider');
+      const toplam=+parcalar.reduce((s,y)=>s+y.tutar,0).toFixed(2);
+      const detay=parcalar.map(y=>`${GKASA_L[y.gkasa]||y.gkasa}: ${para(y.tutar)}`).join(' + ');
+      out.push({...x,tip:'gidersplit',tutar:toplam,_splitDetay:detay,_splitIds:parcalar.map(y=>y.id)});
     } else {
       out.push(x);
     }
@@ -1809,17 +1929,19 @@ function groupSplitList(list){
 
 function renderII(x){
   const t=TIPLER[x.tip]||{l:x.tip,i:'•'};
-  const isg=x.tip==='gider', isv=x.tip==='virman', issp=x.tip==='split';
-  const lbl=isg&&x.gkat?x.gkat:isv?`Virman ${x.vHar==='giris'?'Giriş':'Çıkış'} (${gkIsim(x.gkasa)})`:t.l;
-  const tutCls=isv?(x.vHar==='giris'?'p':'m'):isg?'m':'p';
-  const prefix=isv?(x.vHar==='giris'?'+':'-'):isg?'-':'+';
-  const notHtml=issp?`<div class="inot">${x._splitDetay}${x.not?' · '+x.not:''}</div>`:(x.not?`<div class="inot">${x.not}</div>`:'');
-  const delOnclick=issp?`silSplit('${x._splitIds.join(',')}')`:`silI(${x.id})`;
+  const isg=x.tip==='gider', isv=x.tip==='virman', issp=x.tip==='split', isgsp=x.tip==='gidersplit';
+  const cls=isg?'gider':isv?'virman':isgsp?'gidersplit':x.tip;
+  const lbl=(isg||isgsp)&&x.gkat?x.gkat:isv?`Virman ${x.vHar==='giris'?'Giriş':'Çıkış'} (${gkIsim(x.gkasa)})`:t.l;
+  const tutCls=isv?(x.vHar==='giris'?'p':'m'):(isg||isgsp)?'m':'p';
+  const prefix=isv?(x.vHar==='giris'?'+':'-'):(isg||isgsp)?'-':'+';
+  const notHtml=(issp||isgsp)?`<div class="inot">${x._splitDetay}${x.not?' · '+x.not:''}</div>`:(x.not?`<div class="inot">${x.not}</div>`:'');
+  const delOnclick=issp?`silSplit('${x._splitIds.join(',')}')`:isgsp?`silGiderSplit('${x._splitIds.join(',')}')`:`silI(${x.id})`;
+  const editOnclick=issp?`openSplitEdit('${x.grup}')`:isgsp?`openGiderSplitEdit('${x.giderGrup}')`:`openIM(${x.id})`;
   return`<div class="ii">
-    <div class="ilft"><div class="idot ${isg?'gider':isv?'virman':x.tip}">${t.i}</div>
-    <div class="iinf"><div class="itp ${isg?'gider':isv?'virman':x.tip}">${lbl}</div>${notHtml}<div class="idate">${fd(x.tarih)}</div></div></div>
+    <div class="ilft"><div class="idot ${cls}">${t.i}</div>
+    <div class="iinf"><div class="itp ${cls}">${lbl}</div>${notHtml}<div class="idate">${fd(x.tarih)}</div></div></div>
     <div class="irgt"><div class="itut ${tutCls}">${prefix}${para(x.tutar)}</div>
-      ${issp?`<button class="isil" style="color:var(--mu);" onclick="openSplitEdit('${x.grup}')">✏️</button>`:`<button class="isil" style="color:var(--mu);" onclick="openIM(${x.id})">✏️</button>`}
+      <button class="isil" style="color:var(--mu);" onclick="${editOnclick}">✏️</button>
       <button class="isil" onclick="${delOnclick}">✕</button>
     </div>
   </div>`;
@@ -1832,27 +1954,35 @@ function silSplit(idsCsv){
   if(document.getElementById('page-islemler').classList.contains('on'))renderTumI();
   if(document.getElementById('page-giderler').classList.contains('on'))renderG();
 }
+function silGiderSplit(idsCsv){
+  if(!confirm('Bu bölünmüş giderin tüm parçalarını (tüm kasalardan) silmek istediğine emin misin?'))return;
+  const ids=idsCsv.split(',').map(Number);
+  D.isl=D.isl.filter(x=>!ids.includes(x.id));
+  save();renderAll();
+  if(document.getElementById('page-islemler').classList.contains('on'))renderTumI();
+  if(document.getElementById('page-giderler').classList.contains('on'))renderG();
+}
 let modalSplitGrup=null;
 function openSplitEdit(grup){
   modalSplitGrup=grup;
   const MT=['pos','nf','nfs','bir'];
   const parcalar=D.isl.filter(x=>x.grup===grup&&MT.includes(x.tip));
   if(!parcalar.length)return;
-  document.getElementById('sm-tarih').value=parcalar[0].tarih;
-  document.getElementById('sm-not').value=parcalar[0].not||'';
-  document.getElementById('sm-pos').value=(parcalar.find(x=>x.tip==='pos')||{}).tutar||'';
-  document.getElementById('sm-nf').value=(parcalar.find(x=>x.tip==='nf')||{}).tutar||'';
-  document.getElementById('sm-nfs').value=(parcalar.find(x=>x.tip==='nfs')||{}).tutar||'';
-  document.getElementById('sm-bir').value=(parcalar.find(x=>x.tip==='bir')||{}).tutar||'';
-  document.getElementById('sm-ov').classList.remove('h');
+  document.getElementById('spm-tarih').value=parcalar[0].tarih;
+  document.getElementById('spm-not').value=parcalar[0].not||'';
+  document.getElementById('spm-pos').value=(parcalar.find(x=>x.tip==='pos')||{}).tutar||'';
+  document.getElementById('spm-nf').value=(parcalar.find(x=>x.tip==='nf')||{}).tutar||'';
+  document.getElementById('spm-nfs').value=(parcalar.find(x=>x.tip==='nfs')||{}).tutar||'';
+  document.getElementById('spm-bir').value=(parcalar.find(x=>x.tip==='bir')||{}).tutar||'';
+  document.getElementById('spm-ov').classList.remove('h');
 }
-function closeSplitEdit(){document.getElementById('sm-ov').classList.add('h');modalSplitGrup=null;}
+function closeSplitEdit(){document.getElementById('spm-ov').classList.add('h');modalSplitGrup=null;}
 function kaydetSplitEdit(){
   const grup=modalSplitGrup;
   if(!grup)return;
-  const tarih=document.getElementById('sm-tarih').value;
-  const notVal=document.getElementById('sm-not').value.trim();
-  const yeni={pos:parseFloat(document.getElementById('sm-pos').value)||0,nf:parseFloat(document.getElementById('sm-nf').value)||0,nfs:parseFloat(document.getElementById('sm-nfs').value)||0,bir:parseFloat(document.getElementById('sm-bir').value)||0};
+  const tarih=document.getElementById('spm-tarih').value;
+  const notVal=document.getElementById('spm-not').value.trim();
+  const yeni={pos:parseFloat(document.getElementById('spm-pos').value)||0,nf:parseFloat(document.getElementById('spm-nf').value)||0,nfs:parseFloat(document.getElementById('spm-nfs').value)||0,bir:parseFloat(document.getElementById('spm-bir').value)||0};
   if(!tarih){alert('Tarih girin.');return;}
   if(yeni.pos<=0&&yeni.nf<=0&&yeni.nfs<=0&&yeni.bir<=0){alert('En az bir ödeme yöntemine tutar girin.');return;}
   const GKASA={pos:'pos',nf:'nak',nfs:'nak',bir:'bir'};
@@ -1890,9 +2020,55 @@ function kaydetSplitEdit(){
   if(document.getElementById('page-islemler').classList.contains('on'))renderTumI();
   if(document.getElementById('page-giderler').classList.contains('on'))renderG();
 }
+let modalGiderSplitGrup=null, modalGiderSplitKat=null;
+function openGiderSplitEdit(giderGrup){
+  modalGiderSplitGrup=giderGrup;
+  const parcalar=D.isl.filter(x=>x.giderGrup===giderGrup&&x.tip==='gider');
+  if(!parcalar.length)return;
+  modalGiderSplitKat={gkat:parcalar[0].gkat,anaKat:parcalar[0].anaKat};
+  document.getElementById('gspm-tarih').value=parcalar[0].tarih;
+  document.getElementById('gspm-not').value=parcalar[0].not||'';
+  document.getElementById('gspm-pos').value=(parcalar.find(x=>x.gkasa==='pos')||{}).tutar||'';
+  document.getElementById('gspm-nak').value=(parcalar.find(x=>x.gkasa==='nak')||{}).tutar||'';
+  document.getElementById('gspm-bir').value=(parcalar.find(x=>x.gkasa==='bir')||{}).tutar||'';
+  document.getElementById('gspm-yurt').value=(parcalar.find(x=>x.gkasa==='yurt')||{}).tutar||'';
+  document.getElementById('gspm-ov').classList.remove('h');
+}
+function closeGiderSplitEdit(){document.getElementById('gspm-ov').classList.add('h');modalGiderSplitGrup=null;modalGiderSplitKat=null;}
+function kaydetGiderSplitEdit(){
+  const giderGrup=modalGiderSplitGrup;
+  if(!giderGrup)return;
+  const tarih=document.getElementById('gspm-tarih').value;
+  const notVal=document.getElementById('gspm-not').value.trim();
+  const yeni={pos:parseFloat(document.getElementById('gspm-pos').value)||0,nak:parseFloat(document.getElementById('gspm-nak').value)||0,bir:parseFloat(document.getElementById('gspm-bir').value)||0,yurt:parseFloat(document.getElementById('gspm-yurt').value)||0};
+  if(!tarih){alert('Tarih girin.');return;}
+  if(yeni.pos<=0&&yeni.nak<=0&&yeni.bir<=0&&yeni.yurt<=0){alert('En az bir kasaya tutar girin.');return;}
+  const k=kasaBak();
+  for(const gk of ['pos','nak','bir','yurt']){
+    const mevcutTutar=(D.isl.find(x=>x.giderGrup===giderGrup&&x.gkasa===gk)||{}).tutar||0;
+    const musaitBakiye=(k[gk]||0)+mevcutTutar; // bu giderin kendi payı geri eklenmiş bakiye
+    if(yeni[gk]>musaitBakiye+0.01){
+      alert(`Yetersiz bakiye! ${GKASA_L[gk]} kasasında ${para(musaitBakiye)} var.`);
+      return;
+    }
+  }
+  ['pos','nak','bir','yurt'].forEach(gk=>{
+    const mevcut=D.isl.find(x=>x.giderGrup===giderGrup&&x.gkasa===gk);
+    const val=yeni[gk];
+    if(val>0){
+      if(mevcut){mevcut.tutar=val;mevcut.tarih=tarih;mevcut.not=notVal;}
+      else{D.isl.unshift({id:Date.now()+Math.floor(Math.random()*1000),tip:'gider',tutar:val,tarih,not:notVal,gkat:modalGiderSplitKat.gkat,anaKat:modalGiderSplitKat.anaKat,gkasa:gk,giderGrup});}
+    } else if(mevcut){
+      D.isl=D.isl.filter(x=>x.id!==mevcut.id);
+    }
+  });
+  D.isl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
+  save();closeGiderSplitEdit();renderAll();
+  if(document.getElementById('page-islemler').classList.contains('on'))renderTumI();
+  if(document.getElementById('page-giderler').classList.contains('on'))renderG();
+}
 
 function renderSon(){
-  const el=document.getElementById('son-i');
   const s=groupSplitList(sortedI()).slice(0,6);
   el.innerHTML=s.length?s.map(renderII).join(''):'<div class="bos"><div class="bosi">📭</div><p>Henüz işlem yok.</p></div>';
 }
@@ -1972,12 +2148,13 @@ function renderG(){
   gl.sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.id-a.id);
   const top=gl.reduce((s,x)=>s+x.tutar,0);
   document.getElementById('g-tot').textContent='-'+para(top);
-  document.getElementById('g-sub').textContent=gl.length+' işlem';
+  const glGrouped=groupSplitList(gl);
+  document.getElementById('g-sub').textContent=glGrouped.length+' işlem';
   const kset=new Set(gl.map(x=>x.anaKat||'Diğer'));
   const ch=document.getElementById('g-kchips');
   ch.innerHTML='<button class="chip gerr on" onclick="gkF(this,\'hepsi\')">Tümü</button>'
     +[...kset].sort().map(k=>`<button class="chip gerr" onclick="gkF(this,'${esc(k)}')">${k}</button>`).join('');
-  const liste=aktifGKat==='hepsi'?gl:gl.filter(x=>(x.anaKat||'Diğer')===aktifGKat);
+  const liste=aktifGKat==='hepsi'?glGrouped:glGrouped.filter(x=>(x.anaKat||'Diğer')===aktifGKat);
   document.getElementById('g-liste').innerHTML=liste.length?liste.map(renderII).join(''):'<div class="empty">Bu aralıkta gider yok.</div>';
 }
 function gkF(btn,k){
