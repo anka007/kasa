@@ -280,10 +280,10 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
 
     <!-- Masaj adımları -->
     <div class="step" id="st-plat">
-      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="f-plat" onchange="platHizDeg()"><option value="">— Standart —</option></select></div>
+      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="f-plat" onchange="platHizDeg()"><option value="">— Seç —</option></select></div>
     </div>
     <div class="step" id="st-hiz">
-      <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="f-hiz" onchange="platHizDeg()"><optgroup label="Masaj Türleri" id="f-hiz-og"></optgroup></select></div>
+      <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="f-hiz" onchange="platHizDeg()"><option value="">— Seç —</option><optgroup label="Masaj Türleri" id="f-hiz-og"></optgroup></select></div>
     </div>
     <div class="step" id="st-sure">
       <div class="r2">
@@ -420,9 +420,9 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     </div>
     <div class="r2">
       <div class="ig" style="max-width:130px;"><label data-i18n="tarih_lbl">Tarih</label><input type="date" id="rv-tarih" onchange="rvCakismaKontrol()"></div>
-      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="rv-plat" onchange="rvFiyatDoldur()"><option value="">— Standart —</option></select></div>
+      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="rv-plat" onchange="rvFiyatDoldur()"><option value="">— Seç —</option></select></div>
     </div>
-    <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="rv-hiz" onchange="rvFiyatDoldur()"><optgroup label="Masaj" id="rv-og"></optgroup></select></div>
+    <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="rv-hiz" onchange="rvFiyatDoldur()"><option value="">— Seç —</option><optgroup label="Masaj" id="rv-og"></optgroup></select></div>
     <div class="r2">
       <div class="ig"><label data-i18n="sure_dakika">Süre (dakika)</label><input type="number" id="rv-sure" placeholder="60" value="60" min="1" onchange="rvCakismaKontrol();rvFiyatDoldur()"></div>
       <div class="ig" id="rv-fiyat-grp"><label data-i18n="fiyat_rub">Fiyat (₽)</label><input type="number" id="rv-fiyat" placeholder="0" step="0.01"></div>
@@ -518,7 +518,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <div class="r2"><div class="ig"><label data-i18n="toplam_tutar">Toplam Tutar (₽)</label><input type="number" id="s-tutar" placeholder="0" step="0.01"></div><div class="ig" style="max-width:128px;"><label data-i18n="alis_tarihi">Alış Tarihi</label><input type="date" id="s-tarih"></div></div>
     <div class="ig"><label data-i18n="odeme_turu">Ödeme Türü</label><select id="s-od" onchange="sOdChange()"><option value="pos">🏦 POS</option><option value="nf">🧾 Nakit Fişli</option><option value="nfs">💵 Nakit Fişsiz</option><option value="bir">👤 Bireysel Hesap</option></select></div>
     <div class="posbox" id="s-posbox">
-      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="s-plat"><option value="">— Standart —</option></select></div>
+      <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="s-plat"><option value="">— Seç —</option></select></div>
       <div class="ig" style="margin-bottom:5px;max-width:130px;"><label data-i18n="komisyon_pct">Komisyon %</label><input type="number" id="s-posoran" step="0.01" oninput="sPosHes()"></div>
       <div class="posres" id="s-posres"></div>
     </div>
@@ -857,8 +857,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <div class="ig"><label data-i18n="saat_lbl">Saat</label><input type="time" id="rve-saat"></div>
   </div>
   <div class="ig"><label data-i18n="sure_dakika">Süre (dakika)</label><input type="number" id="rve-sure" min="1"></div>
-  <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="rve-hiz"><optgroup label="Masaj" id="rve-og"></optgroup></select></div>
-  <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="rve-plat"><option value="">— Standart —</option></select></div>
+  <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="rve-hiz"><option value="">— Seç —</option><optgroup label="Masaj" id="rve-og"></optgroup></select></div>
+  <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="rve-plat"><option value="">— Seç —</option></select></div>
   <div class="ig"><label data-i18n="not_ist">Not (isteğe bağlı)</label><input type="text" id="rve-not"></div>
   <div class="rv-warn" id="rve-warn-box"></div>
   <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetRVE()">✓ Kaydet</button><button class="btns" onclick="closeRVE()" data-i18n="btn_iptal">İptal</button></div>
@@ -1540,7 +1540,8 @@ function ekleI(){
 
   // MASAJ
   const plat=document.getElementById('f-plat').value;
-  const hiz=document.getElementById('f-hiz').value||'Masaj';
+  const hiz=document.getElementById('f-hiz').value;
+  if(!hiz){alert('Masaj türü seçin.');return;}
   const sureDk=parseInt(document.getElementById('f-sure').value)||60;
   const kisi=document.getElementById('f-kisi').value.trim();
   const parts=[hiz];
@@ -2594,6 +2595,7 @@ function kaydetRVE(){
   const plat=document.getElementById('rve-plat').value;
   const hiz=document.getElementById('rve-hiz').value;
   if(!tarih||!saat){alert('Tarih ve saat girin.');return;}
+  if(!hiz){alert('Masaj türü seçin.');return;}
   // Çakışma kontrolü (kendisi hariç)
   const baslangic=rvToMinutes(saat);
   const bitis=baslangic+sure;
