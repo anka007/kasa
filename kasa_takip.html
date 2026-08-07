@@ -857,6 +857,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <div class="ig"><label data-i18n="saat_lbl">Saat</label><input type="time" id="rve-saat"></div>
   </div>
   <div class="ig"><label data-i18n="sure_dakika">Süre (dakika)</label><input type="number" id="rve-sure" min="1"></div>
+  <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="rve-plat"><option value="">— Standart —</option></select></div>
   <div class="ig"><label data-i18n="not_ist">Not (isteğe bağlı)</label><input type="text" id="rve-not"></div>
   <div class="rv-warn" id="rve-warn-box"></div>
   <div class="mact"><button class="btnm" style="flex:1;" onclick="kaydetRVE()">✓ Kaydet</button><button class="btns" onclick="closeRVE()" data-i18n="btn_iptal">İptal</button></div>
@@ -2575,6 +2576,7 @@ function openRVE(id){
   document.getElementById('rve-tarih').value=modalRVE.tarih;
   document.getElementById('rve-saat').value=modalRVE.saat;
   document.getElementById('rve-sure').value=modalRVE.sure;
+  document.getElementById('rve-plat').value=modalRVE.plat||'';
   document.getElementById('rve-not').value=modalRVE.not||'';
   document.getElementById('rve-warn-box').classList.remove('on');
   document.getElementById('rve-warn-box').textContent='';
@@ -2587,6 +2589,7 @@ function kaydetRVE(){
   const saat=document.getElementById('rve-saat').value;
   const sure=parseInt(document.getElementById('rve-sure').value)||60;
   const not=document.getElementById('rve-not').value.trim();
+  const plat=document.getElementById('rve-plat').value;
   if(!tarih||!saat){alert('Tarih ve saat girin.');return;}
   // Çakışma kontrolü (kendisi hariç)
   const baslangic=rvToMinutes(saat);
@@ -2607,6 +2610,7 @@ function kaydetRVE(){
   modalRVE.saat=saat;
   modalRVE.sure=sure;
   modalRVE.sureLabel=sure+' dk';
+  modalRVE.plat=plat||null;
   modalRVE.not=not;
   D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
   save();closeRVE();renderRV();renderBugunRV();renderCal();
@@ -3494,7 +3498,7 @@ function buildSelects(){
     og.innerHTML=D.hiz.map(h=>`<option value="${esc(h.isim)}">${h.isim}</option>`).join('');
   });
   // Platform select'leri
-  ['f-plat','rv-plat','s-plat','m-plat'].forEach(id=>{
+  ['f-plat','rv-plat','s-plat','m-plat','rve-plat'].forEach(id=>{
     const sel=document.getElementById(id);if(!sel)return;
     while(sel.options.length>1)sel.remove(1);
     D.plat.forEach(p=>{const o=document.createElement('option');o.value=p.isim;o.textContent=p.isim;sel.appendChild(o);});
