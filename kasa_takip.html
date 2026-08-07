@@ -857,6 +857,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
     <div class="ig"><label data-i18n="saat_lbl">Saat</label><input type="time" id="rve-saat"></div>
   </div>
   <div class="ig"><label data-i18n="sure_dakika">Süre (dakika)</label><input type="number" id="rve-sure" min="1"></div>
+  <div class="ig"><label data-i18n="masaj_turu">Masaj Türü</label><select id="rve-hiz"><optgroup label="Masaj" id="rve-og"></optgroup></select></div>
   <div class="ig"><label data-i18n="platform_lbl">Platform</label><select id="rve-plat"><option value="">— Standart —</option></select></div>
   <div class="ig"><label data-i18n="not_ist">Not (isteğe bağlı)</label><input type="text" id="rve-not"></div>
   <div class="rv-warn" id="rve-warn-box"></div>
@@ -2576,6 +2577,7 @@ function openRVE(id){
   document.getElementById('rve-tarih').value=modalRVE.tarih;
   document.getElementById('rve-saat').value=modalRVE.saat;
   document.getElementById('rve-sure').value=modalRVE.sure;
+  document.getElementById('rve-hiz').value=modalRVE.hiz||'';
   document.getElementById('rve-plat').value=modalRVE.plat||'';
   document.getElementById('rve-not').value=modalRVE.not||'';
   document.getElementById('rve-warn-box').classList.remove('on');
@@ -2590,6 +2592,7 @@ function kaydetRVE(){
   const sure=parseInt(document.getElementById('rve-sure').value)||60;
   const not=document.getElementById('rve-not').value.trim();
   const plat=document.getElementById('rve-plat').value;
+  const hiz=document.getElementById('rve-hiz').value;
   if(!tarih||!saat){alert('Tarih ve saat girin.');return;}
   // Çakışma kontrolü (kendisi hariç)
   const baslangic=rvToMinutes(saat);
@@ -2610,6 +2613,7 @@ function kaydetRVE(){
   modalRVE.saat=saat;
   modalRVE.sure=sure;
   modalRVE.sureLabel=sure+' dk';
+  modalRVE.hiz=hiz;
   modalRVE.plat=plat||null;
   modalRVE.not=not;
   D.rv.sort((a,b)=>a.tarih.localeCompare(b.tarih)||a.saat.localeCompare(b.saat));
@@ -3493,7 +3497,7 @@ function buildPlatSels(){buildSelects();}
 
 function buildSelects(){
   // Hizmet select'leri
-  ['f-hiz-og','rv-og','sm-hiz-og'].forEach(id=>{
+  ['f-hiz-og','rv-og','sm-hiz-og','rve-og'].forEach(id=>{
     const og=document.getElementById(id);if(!og)return;
     og.innerHTML=D.hiz.map(h=>`<option value="${esc(h.isim)}">${h.isim}</option>`).join('');
   });
