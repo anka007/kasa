@@ -936,6 +936,7 @@ function save(){
   saveLocal();
   if(typeof isFirebaseMode!=='undefined' && isFirebaseMode){
     pendingSave = true;
+    localStorage.setItem('kt3_pendingSave','1'); // sayfa kapanıp yeniden açılsa bile bu değişikliğin bulut ile senkronize edilmediğini hatırla
     clearTimeout(syncTimeout);
     syncTimeout = setTimeout(cloudSaveAll, 1500); // debounce 1.5s
   }
@@ -3910,6 +3911,7 @@ async function cloudSaveAll(){
   try {
     await batch.commit();
     pendingSave = false;
+    localStorage.removeItem('kt3_pendingSave');
     showSync('✓ Kaydedildi', '#38d9a9', 2000);
   } catch(e){
     showSync('❌ Kaydedilemedi, tekrar deneniyor...', '#ff6b6b', 3000);
@@ -3953,6 +3955,13 @@ async function cloudLoadAll(){
 }
 
 function startRealtimeSync(){
+  // Önceki oturumdan senkronize edilememiş yerel bir değişiklik varsa (ör. gider/randevu
+  // kaydedilip 1.5 sn dolmadan sayfa kapatılmışsa), önce onu buluta gönder — yoksa
+  // aşağıdaki cloudLoadAll() bu kaydı sessizce eski bulut verisiyle ezebilir.
+  if(localStorage.getItem('kt3_pendingSave')==='1'){
+    pendingSave = true;
+    cloudSaveAll();
+  }
   // Load on start
   cloudLoadAll();
   // Listen for remote changes every 30 sec
