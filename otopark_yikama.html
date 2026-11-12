@@ -251,7 +251,7 @@ function varsayilanAyar(){return{
     {id:'h4',isim:'Detaylı temizlik',fiyat:{binek:1500,suv:1800,ticari:2200}}
   ],
   giderKat:['Personel','Elektrik','Su','Kimyasal ve malzeme','Kira','Bakım','Diğer'],
-  personel:[],ownerEmail:''}}
+  personel:[],yoneticiler:[],ownerEmail:''}}
 const D={ayar:varsayilanAyar(),pk:[],ab:[],yk:[],pkt:[],stok:[],kasaBugun:[],kasaRapor:[]};
 const SEC={};
 let db=null,auth=null,user=null,rol='admin',aktif='park',uyeTab='park',kPer='ay',kBas='',kSon='',aranan='';
@@ -416,7 +416,7 @@ function uygulamaBaslat(){
     D.ayar=Object.assign({},def,v);
     D.ayar.tarife=Object.assign({},def.tarife,v.tarife||{});
     const mail=(user.email||'').toLowerCase();
-    if(mail===(D.ayar.ownerEmail||'').toLowerCase())rol='admin';
+    if(mail===(D.ayar.ownerEmail||'').toLowerCase()||(D.ayar.yoneticiler||[]).map(x=>String(x).toLowerCase()).indexOf(mail)>=0)rol='admin';
     else if((D.ayar.personel||[]).map(x=>String(x).toLowerCase()).indexOf(mail)>=0)rol='personel';
     else rol='yok';
     if(rol==='yok'){alert('Bu hesabın erişim yetkisi yok. Yöneticiden e-postanızı Ayarlar bölümüne eklemesini isteyin.');auth.signOut();return}
@@ -1019,7 +1019,11 @@ function ayarCiz(){
     (FIREBASE_KULLAN?hesapKartlari():yerelKart());
 }
 function hesapKartlari(){
-  return '<div class="kart"><h3 style="font-size:21px">Personel</h3><div class="soluk" style="margin-bottom:8px">Personelin hesabını Firebase konsolunda (Authentication, Add user) oluşturun, sonra e-postasını buraya ekleyin. Personel kasa ve ayarları göremez.</div>'+
+  return '<div class="kart"><h3 style="font-size:21px">Yöneticiler</h3><div class="soluk" style="margin-bottom:8px">Yönetici her şeyi görür ve ayarları değiştirir. Önce hesabı Firebase konsolunda (Authentication, Add user) oluşturun, sonra e-postasını buraya ekleyin.</div>'+
+    '<span class="etiket">'+esc(D.ayar.ownerEmail||'')+' (ana yönetici)</span>'+
+    (D.ayar.yoneticiler||[]).map((m,i)=>'<span class="etiket">'+esc(m)+'<button onclick="yonSil('+i+')" aria-label="Sil">×</button></span>').join('')+
+    '<div class="arama" style="margin-top:6px"><input id="yeniYon" type="email" placeholder="yonetici@eposta.com"><button class="btn" onclick="yonEkle()">Ekle</button></div></div>'+
+    '<div class="kart"><h3 style="font-size:21px">Personel</h3><div class="soluk" style="margin-bottom:8px">Personelin hesabını Firebase konsolunda (Authentication, Add user) oluşturun, sonra e-postasını buraya ekleyin. Personel kasa ve ayarları göremez.</div>'+
     (D.ayar.personel||[]).map((m,i)=>'<span class="etiket">'+esc(m)+'<button onclick="persSil('+i+')" aria-label="Sil">×</button></span>').join('')+
     '<div class="arama" style="margin-top:6px"><input id="yeniPers" type="email" placeholder="personel@eposta.com"><button class="btn" onclick="persEkle()">Ekle</button></div></div>'+
     '<div class="kart"><div class="satir"><span>Hesap</span><b>'+esc(user?user.email:'')+'</b></div><div class="satir"><span>Yetki</span><b>'+(rol==='admin'?'Yönetici':'Personel')+'</b></div>'+
@@ -1063,6 +1067,14 @@ function persEkle(){
   const v=$('yeniPers').value.trim().toLowerCase();if(!v||v.indexOf('@')<0){toast('Geçerli e-posta girin');return}
   const l=(D.ayar.personel||[]).slice();if(l.indexOf(v)<0)l.push(v);ayarYaz({personel:l});
 }
+function yonEkle(){
+  const v=$('yeniYon').value.trim().toLowerCase();if(!v||v.indexOf('@')<0){toast('Geçerli e-posta girin');return}
+  if(v===(D.ayar.ownerEmail||'').toLowerCase()){toast('Bu hesap zaten ana yönetici');return}
+  const l=(D.ayar.yoneticiler||[]).slice();if(l.indexOf(v)<0)l.push(v);
+  const p=(D.ayar.personel||[]).filter(x=>String(x).toLowerCase()!==v);
+  ayarYaz({yoneticiler:l,personel:p});toast('Yönetici eklendi');
+}
+function yonSil(i){if(!confirm('Bu kişinin yönetici yetkisi kaldırılsın mı?'))return;const l=(D.ayar.yoneticiler||[]).slice();l.splice(i,1);ayarYaz({yoneticiler:l})}
 function persSil(i){const l=(D.ayar.personel||[]).slice();l.splice(i,1);ayarYaz({personel:l})}
 
 // ===================== BAŞLANGIÇ =====================
