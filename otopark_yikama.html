@@ -206,6 +206,10 @@ label{display:block;font-size:13px;color:var(--soluk);margin:11px 0 4px}
     <div id="kListe"></div>
   </section>
 
+  <section id="s-rapor" class="sayfa">
+    <div id="rpIc"></div>
+  </section>
+
   <section id="s-ayar" class="sayfa">
     <div id="ayarIc"></div>
   </section>
@@ -222,6 +226,8 @@ label{display:block;font-size:13px;color:var(--soluk);margin:11px 0 4px}
     <svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5.5a3 3 0 0 1 0 6M18 14c1.8.7 3 2.4 3 5"/></svg><span>Müşteri</span></button>
   <button class="tab" id="tKasa" data-s="kasa" onclick="git('kasa')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9 8.5v7M9 12.5l6-2.5M9 14.8l6-2.5"/></svg><span>Kasa</span></button>
+  <button class="tab" id="tRapor" data-s="rapor" onclick="git('rapor')">
+    <svg viewBox="0 0 24 24"><path d="M5 20V11M10 20V4M15 20v-7M20 20V8"/></svg><span>Rapor</span></button>
   <button class="tab" id="tAyar" data-s="ayar" onclick="git('ayar')">
     <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h2M10 12h10M4 17h12M20 17h0"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg><span>Ayarlar</span></button>
 </nav>
@@ -485,19 +491,21 @@ function rolUygula(){
   const adm=rol==='admin';
   $('tKasa').style.display=adm?'':'none';
   $('tAyar').style.display=adm?'':'none';
+  $('tRapor').style.display=adm?'':'none';
   $('rolEtiket').textContent=!FIREBASE_KULLAN?'Yerel mod':(adm?'Yönetici':'Personel');
   $('oGelirKutu').style.display=adm?'':'none';
-  if(!adm&&(aktif==='kasa'||aktif==='ayar'))git('park');
+  if(!adm&&(aktif==='kasa'||aktif==='ayar'||aktif==='rapor'))git('park');
 }
 
 // ===================== ARAYÜZ =====================
 function git(s){
-  if((s==='kasa'||s==='ayar')&&rol!=='admin')return;
+  if((s==='kasa'||s==='ayar'||s==='rapor')&&rol!=='admin')return;
   aktif=s;
   document.querySelectorAll('.sayfa').forEach(x=>x.classList.remove('on'));
   $('s-'+s).classList.add('on');
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.s===s));
   if(s==='ayar')ayarCiz();
+  if(s==='rapor')raporCiz();
   ciz();
   window.scrollTo(0,0);
 }
@@ -533,16 +541,21 @@ function araDeg(){aranan=$('ara').value;otoparkCiz()}
 function otoparkCiz(){
   const k=parseInt(D.ayar.tarife.kapasite)||0;
   const ic=D.pk;
-  $('oDolu').textContent=ic.length;
+  const ykb=D.yk.filter(j=>j.bay);$('oDolu').textContent=ic.length+ykb.length;
   $('oKap').textContent='/ '+k+' dolu';
   const gelir=D.kasaBugun.filter(x=>x.yon==='gelir'&&x.tur==='park').reduce((a,x)=>a+(x.tutar||0),0);
   $('oGelir').textContent=para(gelir);
-  const harita={};ic.forEach(s=>{if(s.bay)harita[s.bay]=s});
+  const harita={};ic.forEach(s=>{if(s.bay)harita[s.bay]=s});ykb.forEach(j=>{harita[j.bay]=Object.assign({},j,{yk:1})});
   const ar=plakaNorm(aranan);
   const simdi=Date.now();
   let h='';
   for(let i=1;i<=k;i++){
     const s=harita[i];
+    if(s&&s.yk){
+      const bul2=ar&&s.plaka.indexOf(ar)>=0;
+      h+='<button class="yer dolu'+(bul2?' bul':'')+'" onclick="teslimAc(\''+s.id+'\')"><span class="no2">'+i+'</span>'+plakaHtml(s.plaka)+'<span class="gecen">'+sureStr((simdi-(s.bekleBas||s.giris))/60000)+'</span><span class="abe" style="color:#7fe3ec;border-color:#7fe3ec">yıkama</span></button>';
+      continue;
+    }
     if(s){
       const bul=ar&&s.plaka.indexOf(ar)>=0;
       const ab=aktifAbone(s.plaka);
@@ -585,7 +598,7 @@ function girisKaydet(bay){
   if(sv){const a=sv.split(':').map(Number);const d=new Date();d.setHours(a[0],a[1],0,0);if(d.getTime()>Date.now()+60000)d.setDate(d.getDate()-1);giris=d.getTime()}
   if(!bay){
     const kap=parseInt(D.ayar.tarife.kapasite)||0;
-    const dolu=new Set(D.pk.map(s=>s.bay).filter(Boolean));
+    const dolu=new Set(D.pk.concat(D.yk).map(s=>s.bay).filter(Boolean));
     for(let i=1;i<=kap;i++){if(!dolu.has(i)){bay=i;break}}
     if(!bay&&!confirm('Otopark dolu. Yer numarasız girişe izin verilsin mi?'))return;
   }
@@ -652,7 +665,7 @@ function yikamaCiz(){
       '<div class="iri" style="margin-top:6px">'+esc(j.hizmet)+'</div>'+
       '<div class="soluk">'+esc(SINIF[j.sinif]||'')+(j.kisi?' · '+esc(j.kisi):'')+(j.musAd?' · '+esc(j.musAd):'')+'</div>'+
       '<div class="ustSatir" style="margin-top:8px"><span class="num" style="font-size:22px;font-weight:600">'+(p?'Paketten':para(j.fiyat))+'</span>'+
-      '<button class="btn su kucuk" onclick="teslimAc(\''+j.id+'\')">Teslim et</button></div></div>';
+      '</div>'+(j.bay?'<div class="not mavi" style="margin:8px 0 0">'+j.bay+' nolu otopark alanında bekliyor: '+sureStr((simdi-(j.bekleBas||j.giris))/60000)+' (ücretsiz)</div>':'')+'<div class="satirBtn" style="justify-content:flex-end"><button class="btn ikincil kucuk" onclick="yikamaBayAc(\''+j.id+'\')">'+(j.bay?'Alanı değiştir':'Otoparka al')+'</button><button class="btn su kucuk" onclick="teslimAc(\''+j.id+'\')">Teslim et</button></div></div>';
   }).join(''):'<div class="kart soluk">İşlemde araç yok. Yeni yıkama başlatın.</div>';
   const b=D.kasaBugun.filter(x=>x.tur==='yikama').sort((x,y)=>y.tarih-x.tarih);
   $('ykBitti').innerHTML=b.length?b.map(x=>'<div class="satirSag"><div class="sol">'+plakaHtml(x.plaka)+'<div class="soluk">'+esc(x.hizmet||'')+' '+saatStr(x.tarih)+'</div></div><div class="sag">'+(x.odeme==='paket'?'Paket':(adm?para(x.tutar):''))+'</div></div>').join(''):'<div class="soluk">Bugün teslim edilen yok.</div>';
@@ -667,8 +680,8 @@ function yikamaAc(o){
     '<div id="yPaketKutu"></div>'+
     '<label>Araç sınıfı</label><div class="cips" id="ySinifCips">'+Object.keys(SINIF).map(k=>'<button type="button" class="cip'+(k===ySinif?' on':'')+'" onclick="ySinifSec(\''+k+'\',this)">'+SINIF[k]+'</button>').join('')+'</div>'+
     '<label>Hizmet</label><select id="yHizmet" onchange="yFiyatGuncelle()">'+hz.map(h=>'<option value="'+h.id+'"'+(h.id===hid?' selected':'')+'>'+esc(h.isim)+'</option>').join('')+'</select>'+
-    '<label>Fiyat</label><input id="yFiyat" type="number" inputmode="decimal">'+
-    '<label>Müşteri (isteğe bağlı)</label>'+musSecimHtml('yMus',o.musId||'','')+
+    '<label>Müşteri (isteğe bağlı)</label>'+musSecimHtml('yMus',o.musId||'','','yFiyatGuncelle()')+
+    '<label>Fiyat</label><input id="yFiyat" type="number" inputmode="decimal"><div id="yFiyatNot"></div>'+
     '<label>Yıkayan (isteğe bağlı)</label><input id="yKisi">'+
     '<button class="btn su tam" style="margin-top:14px" onclick="yikamaKaydet()">Yıkamayı başlat</button>');
   yPlakaDeg();yFiyatGuncelle();
@@ -676,7 +689,10 @@ function yikamaAc(o){
 function ySinifSec(k,el){ySinif=k;el.parentNode.querySelectorAll('.cip').forEach(c=>c.classList.remove('on'));el.classList.add('on');yFiyatGuncelle()}
 function yFiyatGuncelle(){
   const h=D.ayar.hizmetler.find(x=>x.id===$('yHizmet').value);
-  $('yFiyat').value=yPaket?0:(h&&h.fiyat?(h.fiyat[ySinif]||0):0);
+  const ms=$('yMus'),m=(ms&&ms.value)?D.mus.find(x=>x.id===ms.value):null;
+  const r=h?musFiyat(m,h,ySinif):{fiyat:0,ozel:false};
+  $('yFiyat').value=yPaket?0:r.fiyat;
+  const n=$('yFiyatNot');if(n)n.innerHTML=(!yPaket&&r.ozel&&m)?'<div class="not mavi">'+esc(m.ad)+' için özel fiyat uygulandı.</div>':'';
 }
 function yPlakaDeg(){
   const pl=plakaNorm($('yPlaka').value);
@@ -708,6 +724,32 @@ function yikamaKaydet(){
   yaz('op_yk',yeniId(),{plaka:pl,sinif:ySinif,hizmetId:hz.id,hizmet:hz.isim,fiyat:fiyat,paketId:yPaket||null,giris:Date.now(),kisi:$('yKisi').value.trim(),musId:mm?mm.id:'',musAd:mm?mm.ad:'',ekleyen:user.email});
   sheetKapat();toast('Yıkama başlatıldı');
 }
+function yikamaBayAc(id){
+  const j=D.yk.find(x=>x.id===id);if(!j)return;
+  const kap=parseInt(D.ayar.tarife.kapasite)||0;
+  const dolu=new Set(D.pk.concat(D.yk.filter(x=>x.id!==id)).map(s=>s.bay).filter(Boolean));
+  let oner=j.bay||0;if(!oner){for(let i=1;i<=kap;i++){if(!dolu.has(i)){oner=i;break}}}
+  sheetAc('Otopark alanı',
+    '<div class="plakaBuyuk">'+plakaHtml(j.plaka)+'</div>'+
+    '<div class="soluk">Yıkanan araç otoparkta bekliyorsa alan numarasını girin. Bekleme için otopark ücreti alınmaz, süre kaydedilir.</div>'+
+    '<label>Alan numarası (1-'+kap+')</label><input id="bayNo" type="number" inputmode="numeric" value="'+(oner||'')+'">'+
+    '<button class="btn su tam" style="margin-top:14px" onclick="yikamaBayKaydet(\''+id+'\')">Kaydet</button>'+
+    (j.bay?'<div style="height:8px"></div><button class="btn tehlike tam" onclick="yikamaBayKaldir(\''+id+'\')">Alandan çıkar</button>':''));
+}
+function yikamaBayKaydet(id){
+  const j=D.yk.find(x=>x.id===id);if(!j)return;
+  const n=parseInt($('bayNo').value)||0,kap=parseInt(D.ayar.tarife.kapasite)||0;
+  if(n<1||n>kap){toast('1 ile '+kap+' arasında bir alan girin');return}
+  const pk=D.pk.find(x=>x.bay===n),yk=D.yk.find(x=>x.id!==id&&x.bay===n);
+  if(pk||yk){toast(n+' nolu alan dolu ('+plakaFmt((pk||yk).plaka)+')');return}
+  const o={bay:n};if(!j.bay||!j.bekleBas)o.bekleBas=Date.now();
+  db.collection('op_yk').doc(id).update(o).catch(hata);
+  sheetKapat();toast(n+' nolu alana alındı');
+}
+function yikamaBayKaldir(id){
+  db.collection('op_yk').doc(id).update({bay:0,bekleBas:0}).catch(hata);
+  sheetKapat();toast('Alandan çıkarıldı');
+}
 function teslimAc(id){
   const j=D.yk.find(x=>x.id===id);if(!j)return;
   const p=j.paketId?D.pkt.find(x=>x.id===j.paketId):null;
@@ -717,7 +759,7 @@ function teslimAc(id){
     '<div class="plakaBuyuk">'+plakaHtml(j.plaka)+'</div>'+
     '<div class="satir"><span>Hizmet</span><b>'+esc(j.hizmet)+'</b></div>'+
     '<div class="satir"><span>Sınıf</span><b>'+esc(SINIF[j.sinif]||'')+'</b></div>'+
-    '<div class="satir"><span>Süre</span><b>'+sureStr((Date.now()-j.giris)/60000)+'</b></div>'+sarfNotu(j)+
+    '<div class="satir"><span>Süre</span><b>'+sureStr((Date.now()-j.giris)/60000)+'</b></div>'+(j.bay?'<div class="satir"><span>Otopark alanı</span><b>'+j.bay+' nolu alan, '+sureStr((Date.now()-(j.bekleBas||j.giris))/60000)+' bekledi (ücretsiz)</b></div>':'')+sarfNotu(j)+
     (paketli?
       '<div class="not suc">Paket: '+esc(p.isim)+'. Kalan hak '+p.kalan+', teslimden sonra '+(p.kalan-1)+' olacak. Ödeme alınmaz.</div>'+
       '<button class="btn su tam" onclick="teslimKaydet(\''+id+'\')">Teslim et</button>':
@@ -739,7 +781,7 @@ function teslimKaydet(id){
   const odeme=paketli?'paket':(SEC.tOdeme||'nakit');
   if(odeme==='cari'&&!mm){toast('Cari ödeme için müşteri seçin');return}
   const b=db.batch();
-  b.set(db.collection('op_kasa').doc('k_'+id),{tarih:now,tur:'yikama',yon:'gelir',tutar:tutar,odeme:odeme,plaka:j.plaka,hizmet:j.hizmet,sinif:j.sinif,paketId:j.paketId||null,giris:j.giris,kisi:j.kisi||'',musId:mm?mm.id:'',musAd:mm?mm.ad:'',ekleyen:user.email});
+  b.set(db.collection('op_kasa').doc('k_'+id),{tarih:now,tur:'yikama',yon:'gelir',tutar:tutar,odeme:odeme,plaka:j.plaka,hizmet:j.hizmet,sinif:j.sinif,paketId:j.paketId||null,giris:j.giris,bay:j.bay||0,bekleBas:j.bekleBas||0,kisi:j.kisi||'',musId:mm?mm.id:'',musAd:mm?mm.ad:'',ekleyen:user.email});
   musGuncelle(b,mm,j.plaka,odeme==='cari'?tutar:0);
   if(paketli){
     const log=(p.log||[]).concat([{tarih:now,hizmet:j.hizmet,sinif:j.sinif}]);
@@ -1005,8 +1047,9 @@ function musYenile(){if(aktif==='mus')musCiz();musDetayYenile()}
 function musDetayYenile(){if(sheetTur==='musDetay'&&$('perde').classList.contains('on'))musDetayCiz()}
 function musAyDeg(n){musAy=ayKaydir(musAy,n);D.musKasa=[];musKasaDinle();musYenile()}
 function musPlakaBul(pl){const m=D.mus.find(x=>(x.plakalar||[]).indexOf(pl)>=0);return m?m.id:''}
-function musSecimHtml(id,sel,odemeAd){
-  return '<select id="'+id+'"'+(odemeAd?' onchange="musOdemeDeg(\''+id+'\',\''+odemeAd+'\')"':'')+'><option value="">Müşteri yok</option>'+
+function musSecimHtml(id,sel,odemeAd,ekstra){
+  const oc=(odemeAd?'musOdemeDeg(\''+id+'\',\''+odemeAd+'\');':'')+(ekstra||'');
+  return '<select id="'+id+'"'+(oc?' onchange="'+oc+'"':'')+'><option value="">Müşteri yok</option>'+
     D.mus.slice().sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr')).map(m=>'<option value="'+m.id+'"'+(m.id===sel?' selected':'')+'>'+esc(m.ad)+'</option>').join('')+'</select>';
 }
 function musOdemeDeg(selId,odemeAd){
@@ -1088,6 +1131,7 @@ function musDetayCiz(){
   let h='';
   if(m.tel)h+='<div class="satir"><span>Telefon</span><b><a href="tel:'+esc(m.tel)+'" style="color:var(--park)">'+esc(m.tel)+'</a></b></div>';
   if(m.not)h+=sat('Not',esc(m.not));
+  if(adm)h+=sat('Fiyat tarifesi',musFiyatSay(m)?'Özel ('+musFiyatSay(m)+' hizmet)':'Standart');
   if(adm){
     const b=Math.round((m.borc||0)*100)/100;
     h+='<div class="kart" style="margin-top:10px"><div class="soluk">Güncel bakiye (tüm dönemler)</div><div class="net '+(b>0?'gider':'')+'">'+para(b)+'</div><div class="soluk">'+(b>0?'Müşterinin ödemesi gereken tutar':(b<0?'Fazla tahsilat görünüyor':'Ödenecek borç yok'))+'</div></div>';
@@ -1098,7 +1142,7 @@ function musDetayCiz(){
   if(icerde.length||yikamada.length){
     h+='<h3 class="bas">Şu an</h3><div class="kart">'+
       icerde.map(s=>'<div class="satirSag"><div class="sol">'+plakaHtml(s.plaka)+'<div class="soluk">Otoparkta, '+sureStr((simdi-s.giris)/60000)+'</div></div>'+(adm&&!aktifAbone(s.plaka)?'<div class="sag">'+para(ucretHesapla(s.giris,simdi))+'</div>':'')+'</div>').join('')+
-      yikamada.map(j=>'<div class="satirSag"><div class="sol">'+plakaHtml(j.plaka)+'<div class="soluk">Yıkamada: '+esc(j.hizmet||'')+'</div></div>'+(adm?'<div class="sag">'+para(j.fiyat)+'</div>':'')+'</div>').join('')+'</div>';
+      yikamada.map(j=>'<div class="satirSag"><div class="sol">'+plakaHtml(j.plaka)+'<div class="soluk">Yıkamada: '+esc(j.hizmet||'')+(j.bay?' · '+j.bay+' nolu alan':'')+'</div></div>'+(adm?'<div class="sag">'+para(j.fiyat)+'</div>':'')+'</div>').join('')+'</div>';
   }
   const pm={};
   o.yk.concat(o.pk).forEach(x=>{const k=x.plaka||'-';const e=pm[k]=pm[k]||{yk:0,pk:0,t:0};if(x.tur==='yikama')e.yk++;else e.pk++;e.t+=x.tutar||0});
@@ -1111,7 +1155,7 @@ function musDetayCiz(){
     return '<div class="satirSag"><div class="sol">'+(x.plaka?plakaHtml(x.plaka):'')+'<div class="soluk">'+tarihGoster(tarihKey(x.tarih))+' '+saatStr(x.tarih)+' · '+esc(ad)+'</div></div>'+
       '<div style="text-align:right">'+(adm?'<div class="sag '+(x.tur==='tahsilat'?'gelir':'')+'">'+para(x.tutar)+'</div>':'')+'<div class="soluk">'+esc(ODEME[x.odeme]||'')+'</div></div></div>';
   }).join(''):'<div class="soluk">Bu ay kayıt yok.</div>');
-  h+='<div class="satirBtn">'+(adm?'<button class="btn" onclick="musTahsilatAc(\''+id+'\')">Tahsilat al</button><button class="btn ikincil" onclick="musPaylas(\''+id+'\')">Özeti paylaş</button><button class="btn ikincil" onclick="musCsv(\''+id+'\')">CSV indir</button>':'')+'<button class="btn ikincil" onclick="musFormAc(\''+id+'\')">Düzenle</button></div>';
+  h+='<div class="satirBtn">'+(adm?'<button class="btn" onclick="musTahsilatAc(\''+id+'\')">Tahsilat al</button><button class="btn ikincil" onclick="musPaylas(\''+id+'\')">Özeti paylaş</button><button class="btn ikincil" onclick="musCsv(\''+id+'\')">CSV indir</button><button class="btn ikincil" onclick="musFiyatAc(\''+id+'\')">Özel fiyatlar</button><button class="btn ikincil" onclick="musRapor(\''+id+'\')">Rapor</button>':'')+'<button class="btn ikincil" onclick="musFormAc(\''+id+'\')">Düzenle</button></div>';
   if(adm)h+='<div class="satirBtn"><button class="btn ikincil kucuk" onclick="musBakiyeYenile(\''+id+'\')">Bakiyeyi yeniden hesapla</button><button class="btn tehlike kucuk" onclick="musSil(\''+id+'\')">Müşteriyi sil</button></div>';
   const st=$('sheetIc').scrollTop;
   sheetAc(m.ad,h,'musDetay');
@@ -1265,6 +1309,246 @@ function csvIndir(){
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
   a.download='kasa_'+kBas+'_'+kSon+'.csv';
   document.body.appendChild(a);a.click();a.remove();
+}
+
+function musFiyat(m,h,sinif){
+  const f=m&&m.fiyatlar&&m.fiyatlar[h.id];
+  if(f&&typeof f[sinif]==='number')return{fiyat:f[sinif],ozel:true};
+  return{fiyat:(h.fiyat||{})[sinif]||0,ozel:false};
+}
+function musFiyatSay(m){return Object.keys(m.fiyatlar||{}).filter(k=>Object.keys(m.fiyatlar[k]||{}).length&&D.ayar.hizmetler.some(h=>h.id===k)).length}
+function musFiyatAc(id){
+  const m=D.mus.find(x=>x.id===id);if(!m)return;
+  const hz=D.ayar.hizmetler,f=m.fiyatlar||{};
+  if(!hz.length){toast('Önce Ayarlar bölümünden hizmet ekleyin');return}
+  const al=(k,h,s)=>{const v=(f[h.id]||{})[s];return '<div><label>'+SINIF[s]+'</label><input id="fp_'+k+'_'+s+'" type="number" inputmode="decimal" step="any" placeholder="'+((h.fiyat||{})[s]||0)+'" value="'+(typeof v==='number'?v:'')+'"></div>'};
+  sheetAc('Özel fiyatlar: '+m.ad,
+    '<div class="soluk">Boş bıraktığınız fiyat standart tarifeden alınır (gri rakam). Bu müşteriyle yıkama başlatınca özel fiyat otomatik gelir. Geçmiş kayıtlar değişmez.</div>'+
+    hz.map((h,k)=>'<div class="hzSatir"><div class="iri">'+esc(h.isim)+'</div><div class="uc">'+al(k,h,'binek')+al(k,h,'suv')+al(k,h,'ticari')+'</div></div>').join('')+
+    '<button class="btn tam" style="margin-top:14px" onclick="musFiyatKaydet(\''+id+'\')">Kaydet</button><div style="height:8px"></div>'+
+    '<button class="btn tehlike tam" onclick="musFiyatSifirla(\''+id+'\')">Tümünü standart tarifeye döndür</button><div style="height:8px"></div>'+
+    '<button class="btn ikincil tam" onclick="musDetayAc(\''+id+'\')">Geri</button>');
+}
+function musFiyatKaydet(id){
+  const m=D.mus.find(x=>x.id===id);if(!m)return;
+  const o={};
+  D.ayar.hizmetler.forEach((h,k)=>{
+    const e={};
+    ['binek','suv','ticari'].forEach(s=>{const el=$('fp_'+k+'_'+s);const t=el?el.value.trim():'';if(t!==''){const n=parseFloat(t.replace(',','.'));if(!isNaN(n)&&n>=0)e[s]=n}});
+    if(Object.keys(e).length)o[h.id]=e;
+  });
+  db.collection('op_mus').doc(id).update({fiyatlar:o}).catch(hata);
+  toast('Özel fiyatlar kaydedildi');musDetayAc(id);
+}
+function musFiyatSifirla(id){
+  if(!confirm('Bu müşterinin tüm özel fiyatları silinip standart tarife uygulanacak. Devam edilsin mi?'))return;
+  db.collection('op_mus').doc(id).update({fiyatlar:{}}).catch(hata);
+  toast('Standart tarifeye dönüldü');musDetayAc(id);
+}
+
+// ---- Basit XLSX yazıcı (kütüphane gerektirmez) ----
+const XCRC=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function xCrc(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=XCRC[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function xZip(dosyalar){
+  const enc=new TextEncoder(),parts=[],merkez=[];let ofs=0;
+  dosyalar.forEach(f=>{
+    const ad=enc.encode(f.ad),veri=enc.encode(f.metin),crc=xCrc(veri);
+    const lh=new Uint8Array(30+ad.length),dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint16(6,0x0800,true);dv.setUint16(8,0,true);dv.setUint16(10,0,true);dv.setUint16(12,0x21,true);
+    dv.setUint32(14,crc,true);dv.setUint32(18,veri.length,true);dv.setUint32(22,veri.length,true);dv.setUint16(26,ad.length,true);dv.setUint16(28,0,true);lh.set(ad,30);
+    const ch=new Uint8Array(46+ad.length),cv=new DataView(ch.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0x21,true);
+    cv.setUint32(16,crc,true);cv.setUint32(20,veri.length,true);cv.setUint32(24,veri.length,true);cv.setUint16(28,ad.length,true);cv.setUint32(42,ofs,true);ch.set(ad,46);
+    parts.push(lh,veri);merkez.push(ch);ofs+=lh.length+veri.length;
+  });
+  const mb=merkez.reduce((a,x)=>a+x.length,0),son=new Uint8Array(22),sv=new DataView(son.buffer);
+  sv.setUint32(0,0x06054b50,true);sv.setUint16(8,dosyalar.length,true);sv.setUint16(10,dosyalar.length,true);sv.setUint32(12,mb,true);sv.setUint32(16,ofs,true);
+  return new Blob(parts.concat(merkez,[son]),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+function xKolon(i){let s='';i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s}
+function xEsc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'')}
+function xSayfa(sh){
+  let rows='';
+  sh.satirlar.forEach((satir,ri)=>{
+    let c='';
+    satir.forEach((h,ci)=>{
+      if(h===null||h===undefined||h==='')return;
+      const o=(typeof h==='object')?h:{v:h};
+      const ref=xKolon(ci)+(ri+1),s=o.s?' s="'+o.s+'"':'';
+      if(typeof o.v==='number'){const v=isFinite(o.v)?o.v:0;c+='<c r="'+ref+'"'+s+'>'+(o.f?'<f>'+xEsc(o.f)+'</f>':'')+'<v>'+v+'</v></c>'}
+      else c+='<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+xEsc(o.v)+'</t></is></c>';
+    });
+    rows+='<row r="'+(ri+1)+'">'+c+'</row>';
+  });
+  const gor=sh.dondur?'<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft"/></sheetView></sheetViews>':'<sheetViews><sheetView workbookViewId="0"/></sheetViews>';
+  const kol=(sh.genislik&&sh.genislik.length)?'<cols>'+sh.genislik.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('')+'</cols>':'';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+gor+kol+'<sheetData>'+rows+'</sheetData></worksheet>';
+}
+// Hücre stilleri: 1 başlık, 2 tarih, 3 para, 4 kalın para, 5 kalın metin
+const X_STIL='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="dd\\.mm\\.yyyy"/><numFmt numFmtId="165" formatCode="#,##0.00"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDBE7F8"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+function xlsxOlustur(sayfalar){
+  const n=sayfalar.length,D='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const f=[];
+  f.push({ad:'[Content_Types].xml',metin:D+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sayfalar.map((s,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>'});
+  f.push({ad:'_rels/.rels',metin:D+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'});
+  f.push({ad:'xl/workbook.xml',metin:D+'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sayfalar.map((s,i)=>'<sheet name="'+xEsc(s.ad)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>'});
+  f.push({ad:'xl/_rels/workbook.xml.rels',metin:D+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sayfalar.map((s,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(n+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'});
+  f.push({ad:'xl/styles.xml',metin:X_STIL});
+  sayfalar.forEach((s,i)=>f.push({ad:'xl/worksheets/sheet'+(i+1)+'.xml',metin:xSayfa(s)}));
+  return xZip(f);
+}
+
+// ===================== RAPORLAR =====================
+let rpMus='',rpBas='',rpSon='',rpTum=[],rpYuk=false;
+const r2=n=>Math.round((Number(n)||0)*100)/100;
+function rpVarsayilan(){
+  if(rpBas&&rpSon)return;
+  const b=tarihKey(Date.now()),a=b.split('-');
+  rpBas=a[0]+'-'+a[1]+'-01';rpSon=b;
+}
+function raporCiz(){
+  if(rol!=='admin')return;
+  rpVarsayilan();
+  const l=D.mus.slice().sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr'));
+  const chip=(k,ad)=>'<button type="button" class="cip" onclick="rpHizli(\''+k+'\')">'+ad+'</button>';
+  $('rpIc').innerHTML='<div class="kart">'+
+    '<label style="margin-top:0">Müşteri</label>'+
+    '<select id="rpMusSec" onchange="rpMusDeg()"><option value="">Müşteri seçin</option>'+l.map(m=>'<option value="'+m.id+'"'+(m.id===rpMus?' selected':'')+'>'+esc(m.ad)+'</option>').join('')+'</select>'+
+    '<label>Dönem</label><div class="cips">'+chip('ay','Bu ay')+chip('gecen','Geçen ay')+chip('30','Son 30 gün')+chip('yil','Bu yıl')+'</div>'+
+    '<div class="iki"><div><label>Başlangıç</label><input type="date" id="rpB" value="'+rpBas+'" onchange="rpTarihDeg()"></div><div><label>Bitiş</label><input type="date" id="rpS" value="'+rpSon+'" onchange="rpTarihDeg()"></div></div>'+
+    '</div><div id="rpSonuc"></div>';
+  raporSonucCiz();
+}
+function rpMusDeg(){rpMus=$('rpMusSec').value;rpYukle()}
+function rpTarihDeg(){rpBas=$('rpB').value;rpSon=$('rpS').value;raporSonucCiz()}
+function rpHizli(t){
+  const bugun=tarihKey(Date.now()),a=bugun.split('-').map(Number);
+  if(t==='ay'){rpBas=a[0]+'-'+p2(a[1])+'-01';rpSon=bugun}
+  else if(t==='gecen'){rpBas=tarihKey(new Date(a[0],a[1]-2,1).getTime());rpSon=tarihKey(new Date(a[0],a[1]-1,0).getTime())}
+  else if(t==='30'){rpBas=gunEkle(bugun,-29);rpSon=bugun}
+  else if(t==='yil'){rpBas=a[0]+'-01-01';rpSon=bugun}
+  $('rpB').value=rpBas;$('rpS').value=rpSon;raporSonucCiz();
+}
+function rpYukle(){
+  rpTum=[];
+  if(!rpMus){rpYuk=false;raporSonucCiz();return}
+  const id=rpMus;rpYuk=true;raporSonucCiz();
+  db.collection('op_kasa').where('musId','==',id).get().then(s=>{
+    if(rpMus!==id)return;
+    rpTum=mapDocs(s);rpYuk=false;raporSonucCiz();
+  }).catch(e=>{rpYuk=false;hata(e);raporSonucCiz()});
+}
+function musRapor(id){sheetKapat();rpMus=id;git('rapor');rpYukle()}
+function raporHesapla(){
+  const m=D.mus.find(x=>x.id===rpMus);if(!m)return null;
+  const b0=gunBas(rpBas),b1=gunSon(rpSon);
+  const cariMi=x=>x.yon==='gelir'&&x.odeme==='cari';
+  const once=rpTum.filter(x=>x.tarih<b0);
+  const don=rpTum.filter(x=>x.tarih>=b0&&x.tarih<=b1).sort((a,b)=>a.tarih-b.tarih);
+  const yk=don.filter(x=>x.tur==='yikama'),pk=don.filter(x=>x.tur==='park'),th=don.filter(x=>x.tur==='tahsilat');
+  const devir=r2(topTutar(once.filter(cariMi))-topTutar(once.filter(x=>x.tur==='tahsilat')));
+  const cari=r2(topTutar(don.filter(cariMi))),tahsilat=r2(topTutar(th));
+  const hiz=yk.concat(pk);
+  const hm={},am={};
+  yk.forEach(x=>{const k=x.hizmet||'Yıkama';const e=hm[k]=hm[k]||{ad:k,adet:0,tutar:0};e.adet++;e.tutar+=x.tutar||0});
+  hiz.forEach(x=>{const k=x.plaka||'-';const e=am[k]=am[k]||{plaka:k,yk:0,pk:0,tutar:0};if(x.tur==='yikama')e.yk++;else e.pk++;e.tutar+=x.tutar||0});
+  return{m:m,yk:yk,pk:pk,th:th,devir:devir,cari:cari,tahsilat:tahsilat,kalan:r2(devir+cari-tahsilat),
+    pesin:r2(topTutar(hiz.filter(x=>!cariMi(x)))),ykTutar:r2(topTutar(yk)),pkTutar:r2(topTutar(pk)),
+    farkli:new Set(yk.map(x=>x.plaka)).size,
+    hizmetler:Object.keys(hm).map(k=>hm[k]).sort((a,b)=>b.adet-a.adet),
+    araclar:Object.keys(am).map(k=>am[k]).sort((a,b)=>(b.yk+b.pk)-(a.yk+a.pk)||String(a.plaka).localeCompare(String(b.plaka)))};
+}
+function raporSonucCiz(){
+  const el=$('rpSonuc');if(!el)return;
+  if(!rpMus){el.innerHTML='<div class="soluk" style="padding:4px 2px">Rapor görmek için müşteri seçin.</div>';return}
+  if(rpYuk){el.innerHTML='<div class="soluk" style="padding:4px 2px">Kayıtlar yükleniyor…</div>';return}
+  if(!rpBas||!rpSon){el.innerHTML='<div class="not uyari">Başlangıç ve bitiş tarihini seçin.</div>';return}
+  if(rpBas>rpSon){el.innerHTML='<div class="not uyari">Başlangıç tarihi bitiş tarihinden sonra olamaz.</div>';return}
+  const r=raporHesapla();if(!r){el.innerHTML='';return}
+  const m=r.m;
+  const sat=(a,v,c)=>'<div class="satir"><span>'+a+'</span><b class="'+(c||'')+'">'+v+'</b></div>';
+  const bas=(t)=>'<h3 class="bas">'+t+'</h3>';
+  let h='<div class="kart"><div class="soluk">'+esc(m.ad)+' · '+tarihGoster(rpBas)+' - '+tarihGoster(rpSon)+'</div>'+
+    '<div class="net" style="margin:4px 0 2px">'+r.yk.length+'</div><div class="soluk">yıkama yapıldı ('+r.farkli+' farklı araç)</div>'+
+    sat('Yıkama tutarı',para(r.ykTutar))+
+    (r.pk.length?sat('Otopark ('+r.pk.length+' çıkış)',para(r.pkTutar)):'')+'</div>';
+  h+='<div class="kart"><h3 style="font-size:21px;margin-bottom:2px">Borç ve ödeme</h3>'+
+    sat('Dönem başı devir',para(r.devir))+
+    sat('Dönem içi borç (cariye yazılan)',para(r.cari))+
+    sat('Dönem içi alınan ödemeler','-'+para(r.tahsilat),'gelir')+
+    '<div class="satirSag" style="border:0;padding-top:10px"><div class="sol iri">Kalan borç</div><div class="net '+(r.kalan>0?'gider':'')+'" style="font-size:34px">'+para(r.kalan)+'</div></div>'+
+    '<div class="soluk">'+(r.kalan<0?'Fazla ödeme görünüyor.':'Dönem sonu itibarıyla ödenecek tutar.')+'</div>'+
+    sat('Peşin ödenen (borç oluşturmaz)',para(r.pesin))+
+    sat('Güncel bakiye (bugün, tüm dönemler)',para(m.borc||0),(m.borc||0)>0?'gider':'')+'</div>';
+  h+=bas('Alınan ödemeler');
+  h+=r.th.length?'<div class="kart">'+r.th.map(x=>'<div class="satirSag"><div class="sol"><div class="iri" style="font-size:15px">'+tarihGoster(tarihKey(x.tarih))+'</div><div class="soluk">'+esc(ODEME[x.odeme]||'')+'</div></div><div class="sag gelir">'+para(x.tutar)+'</div></div>').join('')+
+    sat('Toplam ödeme',para(r.tahsilat),'gelir')+'</div>':'<div class="soluk">Bu tarihler arasında ödeme alınmamış.</div>';
+  if(r.hizmetler.length)h+=bas('Hizmet dağılımı')+'<div class="kart">'+r.hizmetler.map(x=>'<div class="satirSag"><div class="sol">'+esc(x.ad)+'<div class="soluk">'+x.adet+' adet</div></div><div class="sag">'+para(x.tutar)+'</div></div>').join('')+'</div>';
+  if(r.araclar.length)h+=bas('Araçlar ('+r.araclar.length+')')+'<div class="kart">'+r.araclar.map(x=>'<div class="satirSag"><div class="sol">'+plakaHtml(x.plaka)+'<div class="soluk">'+x.yk+' yıkama'+(x.pk?', '+x.pk+' otopark':'')+'</div></div><div class="sag">'+para(x.tutar)+'</div></div>').join('')+'</div>';
+  const det=r.yk.concat(r.pk).sort((a,b)=>a.tarih-b.tarih);
+  h+=bas('Yıkama ve otopark detayı');
+  h+=det.length?'<div class="kart">'+det.map(x=>{
+    const ad=x.tur==='yikama'?((x.hizmet||'Yıkama')+(x.sinif?' · '+(SINIF[x.sinif]||x.sinif):'')+(x.bay?' · '+x.bay+' nolu alan, '+sureStr((x.tarih-(x.bekleBas||x.giris))/60000)+' bekledi':'')):'Otopark'+(x.giris&&x.cikis?': '+sureStr((x.cikis-x.giris)/60000):'');
+    return '<div class="satirSag"><div class="sol">'+(x.plaka?plakaHtml(x.plaka):'')+'<div class="soluk">'+tarihGoster(tarihKey(x.tarih))+' '+saatStr(x.tarih)+' · '+esc(ad)+'</div></div><div style="text-align:right"><div class="sag">'+para(x.tutar)+'</div><div class="soluk">'+esc(ODEME[x.odeme]||'')+'</div></div></div>';
+  }).join('')+'</div>':'<div class="soluk">Bu tarihler arasında kayıt yok.</div>';
+  h+='<div class="satirBtn"><button class="btn tam" onclick="raporExcel()">Excel olarak indir</button></div>'+
+     '<div class="satirBtn"><button class="btn ikincil tam" onclick="rpYukle()">Kayıtları yenile</button></div>';
+  el.innerHTML=h;
+}
+function raporExcel(){
+  const r=raporHesapla();if(!r)return;
+  const m=r.m,serial=ms=>{const d=new Date(ms);return Math.round(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569};
+  const T=ms=>({v:serial(ms),s:2}),P=n=>({v:Number(n)||0,s:3}),H=t=>({v:t,s:1}),B=t=>({v:t,s:5});
+  const toplam=(ad,kol,n,deger,bos)=>{const s=[B(ad)];for(let i=1;i<kol;i++)s.push('');s[bos]={v:deger,s:4,f:n>0?'SUM('+xKolon(bos)+'2:'+xKolon(bos)+(n+1)+')':undefined};return s};
+  const sayfalar=[];
+  sayfalar.push({ad:'Özet',genislik:[38,26],satirlar:[
+    [B('Müşteri raporu')],
+    ['Müşteri',m.ad],
+    ['Tarih aralığı',tarihGoster(rpBas)+' - '+tarihGoster(rpSon)],
+    ['Rapor tarihi',tarihGoster(tarihKey(Date.now()))],
+    [],
+    [B('Yapılan işler')],
+    ['Yıkama adedi',r.yk.length],
+    ['Farklı araç sayısı',r.farkli],
+    ['Yıkama tutarı',P(r.ykTutar)],
+    ['Otopark çıkış adedi',r.pk.length],
+    ['Otopark tutarı',P(r.pkTutar)],
+    [],
+    [B('Borç ve ödeme')],
+    ['Dönem başı devir',P(r.devir)],
+    ['Dönem içi borç (cariye yazılan)',P(r.cari)],
+    ['Dönem içi alınan ödemeler',P(r.tahsilat)],
+    [B('Kalan borç'),{v:r.kalan,s:4}],
+    ['Peşin ödenen (borç oluşturmaz)',P(r.pesin)],
+    ['Güncel bakiye (bugün, tüm dönemler)',P(m.borc||0)]
+  ]});
+  const yr=[[H('Tarih'),H('Saat'),H('Plaka'),H('Hizmet'),H('Sınıf'),H('Tutar'),H('Ödeme'),H('Yıkayan'),H('Park alanı'),H('Bekleme süresi')]];
+  r.yk.forEach(x=>yr.push([T(x.tarih),saatStr(x.tarih),x.plaka?plakaFmt(x.plaka):'',x.hizmet||'',SINIF[x.sinif]||'',P(x.tutar),ODEME[x.odeme]||'',x.kisi||'',x.bay?x.bay:'',x.bay?sureStr((x.tarih-(x.bekleBas||x.giris))/60000):'']));
+  yr.push(toplam('Toplam',10,r.yk.length,r.ykTutar,5));
+  sayfalar.push({ad:'Yıkamalar',dondur:true,genislik:[12,8,14,24,10,12,12,16,12,16],satirlar:yr});
+  if(r.pk.length){
+    const pr=[[H('Tarih'),H('Plaka'),H('Giriş'),H('Çıkış'),H('Süre'),H('Tutar'),H('Ödeme')]];
+    r.pk.forEach(x=>pr.push([T(x.tarih),x.plaka?plakaFmt(x.plaka):'',x.giris?tarihGoster(tarihKey(x.giris))+' '+saatStr(x.giris):'',x.cikis?tarihGoster(tarihKey(x.cikis))+' '+saatStr(x.cikis):'',x.giris&&x.cikis?sureStr((x.cikis-x.giris)/60000):'',P(x.tutar),ODEME[x.odeme]||'']));
+    pr.push(toplam('Toplam',7,r.pk.length,r.pkTutar,5));
+    sayfalar.push({ad:'Otopark',dondur:true,genislik:[12,14,18,18,14,12,12],satirlar:pr});
+  }
+  const or=[[H('Tarih'),H('Saat'),H('Ödeme şekli'),H('Tutar')]];
+  r.th.forEach(x=>or.push([T(x.tarih),saatStr(x.tarih),ODEME[x.odeme]||'',P(x.tutar)]));
+  or.push(toplam('Toplam',4,r.th.length,r.tahsilat,3));
+  sayfalar.push({ad:'Ödemeler',dondur:true,genislik:[12,8,16,14],satirlar:or});
+  const ar=[[H('Plaka'),H('Yıkama'),H('Otopark'),H('Tutar')]];
+  r.araclar.forEach(x=>ar.push([x.plaka?plakaFmt(x.plaka):'',x.yk,x.pk,P(x.tutar)]));
+  ar.push(toplam('Toplam',4,r.araclar.length,r2(r.ykTutar+r.pkTutar),3));
+  sayfalar.push({ad:'Araçlar',dondur:true,genislik:[16,10,10,14],satirlar:ar});
+  const hr=[[H('Hizmet'),H('Adet'),H('Tutar')]];
+  r.hizmetler.forEach(x=>hr.push([x.ad,x.adet,P(x.tutar)]));
+  hr.push(toplam('Toplam',3,r.hizmetler.length,r.ykTutar,2));
+  sayfalar.push({ad:'Hizmetler',dondur:true,genislik:[28,10,14],satirlar:hr});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(xlsxOlustur(sayfalar));
+  a.download='rapor_'+plakaNorm(m.ad||'musteri')+'_'+rpBas+'_'+rpSon+'.xlsx';
+  document.body.appendChild(a);a.click();a.remove();
+  toast('Excel dosyası hazırlandı');
 }
 
 // ===================== AYARLAR =====================
