@@ -568,12 +568,21 @@ function otoparkCiz(){
   const yz=ic.filter(s=>!s.bay);
   $('yersiz').innerHTML=yz.length?'<h3 class="bas">Yer numarasız araçlar</h3>'+yz.map(s=>'<div class="kart ustSatir" onclick="cikisAc(\''+s.id+'\')">'+plakaHtml(s.plaka)+'<span class="soluk">'+sureStr((simdi-s.giris)/60000)+'</span></div>').join(''):'';
 }
+const dtl=ms=>tarihKey(ms)+'T'+saatStr(ms);
+const dtlMs=v=>{if(!v)return 0;const t=new Date(v).getTime();return isNaN(t)?0:t};
+function cikisZaman(id,ab){
+  const s=D.pk.find(x=>x.id===id);if(!s)return;
+  const c=dtlMs($('cCikis').value);if(!c||c<=s.giris)return;
+  $('cSure').textContent=sureStr((c-s.giris)/60000);
+  $('cHesap').textContent=ab?'Abonelik':ucretDetay(s.giris,c);
+  if(!ab)$('cTutar').value=ucretHesapla(s.giris,c);
+}
 function girisAc(bay){
   sheetAc('Araç girişi','<div class="soluk">'+(bay?bay+'. yer seçildi':'Boş yer otomatik seçilir')+'</div>'+
     '<label>Plaka</label><input id="gPlaka" class="plakaGiris" autocapitalize="characters" autocomplete="off" placeholder="34 ABC 123" oninput="girisPlakaDeg()">'+
     '<div id="gUyari"></div>'+
     '<label>Müşteri (isteğe bağlı)</label>'+musSecimHtml('gMus','','')+
-    '<label>Giriş saati</label><input id="gSaat" type="time" value="'+saatStr(Date.now())+'">'+
+    '<label>Giriş tarihi ve saati</label><input id="gSaat" type="datetime-local" value="'+dtl(Date.now())+'">'+
     '<label>Not (isteğe bağlı)</label><input id="gNot" placeholder="Renk, model">'+
     '<button class="btn tam" style="margin-top:14px" onclick="girisKaydet('+bay+')">Girişi kaydet</button>');
   setTimeout(()=>{const e=$('gPlaka');if(e)e.focus()},60);
@@ -594,8 +603,8 @@ function girisKaydet(bay){
   const pl=plakaNorm($('gPlaka').value);
   if(pl.length<4){toast('Plakayı girin');return}
   if(D.pk.some(s=>s.plaka===pl)){toast('Bu araç zaten içeride');return}
-  let giris=Date.now();const sv=$('gSaat').value;
-  if(sv){const a=sv.split(':').map(Number);const d=new Date();d.setHours(a[0],a[1],0,0);if(d.getTime()>Date.now()+60000)d.setDate(d.getDate()-1);giris=d.getTime()}
+  const giris=dtlMs($('gSaat').value)||Date.now();
+  if(giris>Date.now()+60000){toast('Giriş zamanı ileri tarihli olamaz');return}
   if(!bay){
     const kap=parseInt(D.ayar.tarife.kapasite)||0;
     const dolu=new Set(D.pk.concat(D.yk).map(s=>s.bay).filter(Boolean));
@@ -614,10 +623,11 @@ function cikisAc(id){
   sheetAc('Araç çıkışı',
     '<div class="plakaBuyuk">'+plakaHtml(s.plaka)+'</div>'+
     '<div class="satir"><span>Giriş</span><b>'+tarihGoster(tarihKey(s.giris))+' '+saatStr(s.giris)+'</b></div>'+
-    '<div class="satir"><span>Süre</span><b>'+sureStr((simdi-s.giris)/60000)+'</b></div>'+
-    '<div class="satir"><span>Hesap</span><b style="text-align:right;margin-left:14px">'+esc(ab?'Abonelik':ucretDetay(s.giris,simdi))+'</b></div>'+
+    '<div class="satir"><span>Süre</span><b id="cSure">'+sureStr((simdi-s.giris)/60000)+'</b></div>'+
+    '<div class="satir"><span>Hesap</span><b id="cHesap" style="text-align:right;margin-left:14px">'+esc(ab?'Abonelik':ucretDetay(s.giris,simdi))+'</b></div>'+
     (s.not?'<div class="satir"><span>Not</span><b>'+esc(s.not)+'</b></div>':'')+
     (ab?'<div class="not mavi">Abone: '+esc(ab.isim)+', '+tarihGoster(ab.bitis)+' tarihine kadar. Ücret alınmaz.</div>':'')+
+    '<label>Çıkış tarihi ve saati</label><input id="cCikis" type="datetime-local" value="'+dtl(simdi)+'" oninput="cikisZaman(\''+id+'\','+(ab?1:0)+')">'+
     '<label>Müşteri (isteğe bağlı)</label>'+musSecimHtml('cMus',mid,'cOdeme')+
     '<label>Tutar</label><input id="cTutar" type="number" inputmode="decimal" value="'+ucret+'">'+
     '<label>Ödeme</label>'+odemeCips('cOdeme',mid?'cari':'nakit',true)+
@@ -627,7 +637,8 @@ function cikisAc(id){
 }
 function cikisKaydet(id,abFlag){
   const s=D.pk.find(x=>x.id===id);if(!s)return;
-  const tutar=Math.max(0,parseFloat($('cTutar').value)||0),now=Date.now();
+  const tutar=Math.max(0,parseFloat($('cTutar').value)||0),now=dtlMs($('cCikis').value)||Date.now();
+  if(now>Date.now()+60000||now<=s.giris){toast('Çıkış zamanı girişten sonra olmalı ve ileri tarihli olamaz');return}
   const odeme=(abFlag&&tutar===0)?'abonelik':(SEC.cOdeme||'nakit');
   const mid=$('cMus').value||'',mm=mid?D.mus.find(x=>x.id===mid):null;
   if(odeme==='cari'&&!mm){toast('Cari ödeme için müşteri seçin');return}
@@ -665,7 +676,7 @@ function yikamaCiz(){
       '<div class="iri" style="margin-top:6px">'+esc(j.hizmet)+'</div>'+
       '<div class="soluk">'+esc(SINIF[j.sinif]||'')+(j.kisi?' · '+esc(j.kisi):'')+(j.musAd?' · '+esc(j.musAd):'')+'</div>'+
       '<div class="ustSatir" style="margin-top:8px"><span class="num" style="font-size:22px;font-weight:600">'+(p?'Paketten':para(j.fiyat))+'</span>'+
-      '</div>'+(j.bay?'<div class="not mavi" style="margin:8px 0 0">'+j.bay+' nolu otopark alanında bekliyor: '+sureStr((simdi-(j.bekleBas||j.giris))/60000)+' (ücretsiz)</div>':'')+'<div class="satirBtn" style="justify-content:flex-end"><button class="btn ikincil kucuk" onclick="yikamaBayAc(\''+j.id+'\')">'+(j.bay?'Alanı değiştir':'Otoparka al')+'</button><button class="btn su kucuk" onclick="teslimAc(\''+j.id+'\')">Teslim et</button></div></div>';
+      '</div>'+(j.bay?'<div class="not mavi" style="margin:8px 0 0">'+j.bay+' nolu otopark alanında bekliyor: '+sureStr((simdi-(j.bekleBas||j.giris))/60000)+' (ücretsiz)<br>Yıkama bitişi: '+tarihGoster(tarihKey(j.bekleBas||j.giris))+' '+saatStr(j.bekleBas||j.giris)+'</div>':'')+'<div class="satirBtn" style="justify-content:flex-end"><button class="btn ikincil kucuk" onclick="yikamaBayAc(\''+j.id+'\')">'+(j.bay?'Alanı değiştir':'Otoparka al')+'</button><button class="btn su kucuk" onclick="teslimAc(\''+j.id+'\')">Teslim et</button></div></div>';
   }).join(''):'<div class="kart soluk">İşlemde araç yok. Yeni yıkama başlatın.</div>';
   const b=D.kasaBugun.filter(x=>x.tur==='yikama').sort((x,y)=>y.tarih-x.tarih);
   $('ykBitti').innerHTML=b.length?b.map(x=>'<div class="satirSag"><div class="sol">'+plakaHtml(x.plaka)+'<div class="soluk">'+esc(x.hizmet||'')+' '+saatStr(x.tarih)+'</div></div><div class="sag">'+(x.odeme==='paket'?'Paket':(adm?para(x.tutar):''))+'</div></div>').join(''):'<div class="soluk">Bugün teslim edilen yok.</div>';
@@ -682,6 +693,7 @@ function yikamaAc(o){
     '<label>Hizmet</label><select id="yHizmet" onchange="yFiyatGuncelle()">'+hz.map(h=>'<option value="'+h.id+'"'+(h.id===hid?' selected':'')+'>'+esc(h.isim)+'</option>').join('')+'</select>'+
     '<label>Müşteri (isteğe bağlı)</label>'+musSecimHtml('yMus',o.musId||'','','yFiyatGuncelle()')+
     '<label>Fiyat</label><input id="yFiyat" type="number" inputmode="decimal"><div id="yFiyatNot"></div>'+
+    '<label>Yıkama tarihi ve saati</label><input id="yTar" type="datetime-local" value="'+dtl(Date.now())+'">'+
     '<label>Yıkayan (isteğe bağlı)</label><input id="yKisi">'+
     '<button class="btn su tam" style="margin-top:14px" onclick="yikamaKaydet()">Yıkamayı başlat</button>');
   yPlakaDeg();yFiyatGuncelle();
@@ -720,8 +732,10 @@ function yikamaKaydet(){
   if(!hz){toast('Hizmet seçin');return}
   if(D.yk.some(x=>x.plaka===pl)&&!confirm('Bu plaka zaten işlemde. Yine de eklensin mi?'))return;
   const fiyat=Math.max(0,parseFloat($('yFiyat').value)||0);
+  const gz=dtlMs($('yTar').value)||Date.now();
+  if(gz>Date.now()+60000){toast('Yıkama zamanı ileri tarihli olamaz');return}
   const mid=$('yMus').value||'',mm=mid?D.mus.find(x=>x.id===mid):null;
-  yaz('op_yk',yeniId(),{plaka:pl,sinif:ySinif,hizmetId:hz.id,hizmet:hz.isim,fiyat:fiyat,paketId:yPaket||null,giris:Date.now(),kisi:$('yKisi').value.trim(),musId:mm?mm.id:'',musAd:mm?mm.ad:'',ekleyen:user.email});
+  yaz('op_yk',yeniId(),{plaka:pl,sinif:ySinif,hizmetId:hz.id,hizmet:hz.isim,fiyat:fiyat,paketId:yPaket||null,giris:gz,tarihli:gz<Date.now()-300000,kisi:$('yKisi').value.trim(),musId:mm?mm.id:'',musAd:mm?mm.ad:'',ekleyen:user.email});
   sheetKapat();toast('Yıkama başlatıldı');
 }
 function yikamaBayAc(id){
@@ -733,6 +747,8 @@ function yikamaBayAc(id){
     '<div class="plakaBuyuk">'+plakaHtml(j.plaka)+'</div>'+
     '<div class="soluk">Yıkanan araç otoparkta bekliyorsa alan numarasını girin. Bekleme için otopark ücreti alınmaz, süre kaydedilir.</div>'+
     '<label>Alan numarası (1-'+kap+')</label><input id="bayNo" type="number" inputmode="numeric" value="'+(oner||'')+'">'+
+    '<label>Yıkama bitiş tarihi ve saati</label><input id="bayTar" type="datetime-local" value="'+tarihKey(j.bekleBas||Date.now())+'T'+saatStr(j.bekleBas||Date.now())+'">'+
+    '<div class="soluk">Yıkamayı ne zaman bitirdiyseniz onu seçin. Gelir (nakit veya cari) bu tarihe işlenir. Teslim tarihi ayrıca teslim ettiğinizde kaydedilir.</div>'+
     '<button class="btn su tam" style="margin-top:14px" onclick="yikamaBayKaydet(\''+id+'\')">Kaydet</button>'+
     (j.bay?'<div style="height:8px"></div><button class="btn tehlike tam" onclick="yikamaBayKaldir(\''+id+'\')">Alandan çıkar</button>':''));
 }
@@ -742,7 +758,9 @@ function yikamaBayKaydet(id){
   if(n<1||n>kap){toast('1 ile '+kap+' arasında bir alan girin');return}
   const pk=D.pk.find(x=>x.bay===n),yk=D.yk.find(x=>x.id!==id&&x.bay===n);
   if(pk||yk){toast(n+' nolu alan dolu ('+plakaFmt((pk||yk).plaka)+')');return}
-  const o={bay:n};if(!j.bay||!j.bekleBas)o.bekleBas=Date.now();
+  const bt=$('bayTar').value?new Date($('bayTar').value).getTime():Date.now();
+  if(isNaN(bt)||bt>Date.now()+60000){toast('Yıkama bitiş zamanı geçerli olmalı (ileri tarih olamaz)');return}
+  const o={bay:n,bekleBas:bt};
   db.collection('op_yk').doc(id).update(o).catch(hata);
   sheetKapat();toast(n+' nolu alana alındı');
 }
@@ -759,7 +777,7 @@ function teslimAc(id){
     '<div class="plakaBuyuk">'+plakaHtml(j.plaka)+'</div>'+
     '<div class="satir"><span>Hizmet</span><b>'+esc(j.hizmet)+'</b></div>'+
     '<div class="satir"><span>Sınıf</span><b>'+esc(SINIF[j.sinif]||'')+'</b></div>'+
-    '<div class="satir"><span>Süre</span><b>'+sureStr((Date.now()-j.giris)/60000)+'</b></div>'+(j.bay?'<div class="satir"><span>Otopark alanı</span><b>'+j.bay+' nolu alan, '+sureStr((Date.now()-(j.bekleBas||j.giris))/60000)+' bekledi (ücretsiz)</b></div>':'')+sarfNotu(j)+
+    '<div class="satir"><span>Süre</span><b>'+sureStr((Date.now()-j.giris)/60000)+'</b></div>'+(j.bay?'<div class="satir"><span>Otopark alanı</span><b>'+j.bay+' nolu alan, '+sureStr((Date.now()-(j.bekleBas||j.giris))/60000)+' bekledi (ücretsiz)</b></div><div class="satir"><span>Yıkama bitişi</span><b>'+tarihGoster(tarihKey(j.bekleBas||j.giris))+' '+saatStr(j.bekleBas||j.giris)+'</b></div>':'')+sarfNotu(j)+
     (paketli?
       '<div class="not suc">Paket: '+esc(p.isim)+'. Kalan hak '+p.kalan+', teslimden sonra '+(p.kalan-1)+' olacak. Ödeme alınmaz.</div>'+
       '<button class="btn su tam" onclick="teslimKaydet(\''+id+'\')">Teslim et</button>':
@@ -781,7 +799,7 @@ function teslimKaydet(id){
   const odeme=paketli?'paket':(SEC.tOdeme||'nakit');
   if(odeme==='cari'&&!mm){toast('Cari ödeme için müşteri seçin');return}
   const b=db.batch();
-  b.set(db.collection('op_kasa').doc('k_'+id),{tarih:now,tur:'yikama',yon:'gelir',tutar:tutar,odeme:odeme,plaka:j.plaka,hizmet:j.hizmet,sinif:j.sinif,paketId:j.paketId||null,giris:j.giris,bay:j.bay||0,bekleBas:j.bekleBas||0,kisi:j.kisi||'',musId:mm?mm.id:'',musAd:mm?mm.ad:'',ekleyen:user.email});
+  b.set(db.collection('op_kasa').doc('k_'+id),{tarih:(j.bekleBas||(j.tarihli?j.giris:now)),teslim:now,tur:'yikama',yon:'gelir',tutar:tutar,odeme:odeme,plaka:j.plaka,hizmet:j.hizmet,sinif:j.sinif,paketId:j.paketId||null,giris:j.giris,bay:j.bay||0,bekleBas:j.bekleBas||0,kisi:j.kisi||'',musId:mm?mm.id:'',musAd:mm?mm.ad:'',ekleyen:user.email});
   musGuncelle(b,mm,j.plaka,odeme==='cari'?tutar:0);
   if(paketli){
     const log=(p.log||[]).concat([{tarih:now,hizmet:j.hizmet,sinif:j.sinif}]);
@@ -1488,7 +1506,7 @@ function raporSonucCiz(){
   const det=r.yk.concat(r.pk).sort((a,b)=>a.tarih-b.tarih);
   h+=bas('Yıkama ve otopark detayı');
   h+=det.length?'<div class="kart">'+det.map(x=>{
-    const ad=x.tur==='yikama'?((x.hizmet||'Yıkama')+(x.sinif?' · '+(SINIF[x.sinif]||x.sinif):'')+(x.bay?' · '+x.bay+' nolu alan, '+sureStr((x.tarih-(x.bekleBas||x.giris))/60000)+' bekledi':'')):'Otopark'+(x.giris&&x.cikis?': '+sureStr((x.cikis-x.giris)/60000):'');
+    const ad=x.tur==='yikama'?((x.hizmet||'Yıkama')+(x.sinif?' · '+(SINIF[x.sinif]||x.sinif):'')+(x.bay?' · '+x.bay+' nolu alan, '+sureStr(((x.teslim||x.tarih)-(x.bekleBas||x.giris))/60000)+' bekledi · teslim '+tarihGoster(tarihKey(x.teslim||x.tarih)):'')):'Otopark'+(x.giris&&x.cikis?': '+sureStr((x.cikis-x.giris)/60000):'');
     return '<div class="satirSag"><div class="sol">'+(x.plaka?plakaHtml(x.plaka):'')+'<div class="soluk">'+tarihGoster(tarihKey(x.tarih))+' '+saatStr(x.tarih)+' · '+esc(ad)+'</div></div><div style="text-align:right"><div class="sag">'+para(x.tutar)+'</div><div class="soluk">'+esc(ODEME[x.odeme]||'')+'</div></div></div>';
   }).join('')+'</div>':'<div class="soluk">Bu tarihler arasında kayıt yok.</div>';
   h+='<div class="satirBtn"><button class="btn tam" onclick="raporExcel()">Excel olarak indir</button></div>'+
@@ -1522,10 +1540,10 @@ function raporExcel(){
     ['Peşin ödenen (borç oluşturmaz)',P(r.pesin)],
     ['Güncel bakiye (bugün, tüm dönemler)',P(m.borc||0)]
   ]});
-  const yr=[[H('Tarih'),H('Saat'),H('Plaka'),H('Hizmet'),H('Sınıf'),H('Tutar'),H('Ödeme'),H('Yıkayan'),H('Park alanı'),H('Bekleme süresi')]];
-  r.yk.forEach(x=>yr.push([T(x.tarih),saatStr(x.tarih),x.plaka?plakaFmt(x.plaka):'',x.hizmet||'',SINIF[x.sinif]||'',P(x.tutar),ODEME[x.odeme]||'',x.kisi||'',x.bay?x.bay:'',x.bay?sureStr((x.tarih-(x.bekleBas||x.giris))/60000):'']));
-  yr.push(toplam('Toplam',10,r.yk.length,r.ykTutar,5));
-  sayfalar.push({ad:'Yıkamalar',dondur:true,genislik:[12,8,14,24,10,12,12,16,12,16],satirlar:yr});
+  const yr=[[H('Yıkama tarihi'),H('Yıkama saati'),H('Plaka'),H('Hizmet'),H('Sınıf'),H('Tutar'),H('Ödeme'),H('Yıkayan'),H('Park alanı'),H('Teslim tarihi'),H('Bekleme süresi')]];
+  r.yk.forEach(x=>yr.push([T(x.tarih),saatStr(x.tarih),x.plaka?plakaFmt(x.plaka):'',x.hizmet||'',SINIF[x.sinif]||'',P(x.tutar),ODEME[x.odeme]||'',x.kisi||'',x.bay?x.bay:'',x.bay?{v:serial(x.teslim||x.tarih),s:2}:'',x.bay?sureStr(((x.teslim||x.tarih)-(x.bekleBas||x.giris))/60000):'']));
+  yr.push(toplam('Toplam',11,r.yk.length,r.ykTutar,5));
+  sayfalar.push({ad:'Yıkamalar',dondur:true,genislik:[13,12,14,24,10,12,12,16,12,14,16],satirlar:yr});
   if(r.pk.length){
     const pr=[[H('Tarih'),H('Plaka'),H('Giriş'),H('Çıkış'),H('Süre'),H('Tutar'),H('Ödeme')]];
     r.pk.forEach(x=>pr.push([T(x.tarih),x.plaka?plakaFmt(x.plaka):'',x.giris?tarihGoster(tarihKey(x.giris))+' '+saatStr(x.giris):'',x.cikis?tarihGoster(tarihKey(x.cikis))+' '+saatStr(x.cikis):'',x.giris&&x.cikis?sureStr((x.cikis-x.giris)/60000):'',P(x.tutar),ODEME[x.odeme]||'']));
