@@ -1743,16 +1743,44 @@ function calisanSecDeg(id){
   const o=document.createElement('option');o.textContent=ad;
   el.insertBefore(o,el.querySelector('option[value="__yeni"]'));el.value=ad;
 }
-function giderTemizle(){
-  if(!confirm('TÜM gider kayıtları ve personel isimleri kalıcı olarak silinecek. Gelir, yıkama, otopark ve müşteri kayıtlarına dokunulmaz. Devam edilsin mi?'))return;
-  if(!confirm('Bu işlem geri alınamaz. Gerçekten silinsin mi?'))return;
-  db.collection('op_kasa').where('tur','==','gider').get().then(s=>{
+function koleksiyonSil(ad){
+  return db.collection(ad).get().then(s=>{
     const idler=s.docs.map(d=>d.id),isler=[];
     for(let i=0;i<idler.length;i+=400){
-      const b=db.batch();idler.slice(i,i+400).forEach(id=>b.delete(db.collection('op_kasa').doc(id)));
+      const b=db.batch();idler.slice(i,i+400).forEach(id=>b.delete(db.collection(ad).doc(id)));
       isler.push(b.commit());
     }
-    return Promise.all(isler).then(()=>{ayarYaz({calisanlar:[]});toast(idler.length+' gider kaydı ve personel isimleri silindi')});
+    return Promise.all(isler).then(()=>idler.length);
+  });
+}
+function sifirlaAc(){
+  if(D.ayar.sifirlandi){toast('Sıfırlama daha önce yapıldı');return}
+  const kut=(id,ad)=>'<label style="display:flex;gap:12px;align-items:center;margin:12px 0;font-size:16px;color:var(--yazi,inherit)"><input type="checkbox" id="'+id+'" checked style="width:22px;height:22px;flex:none">'+ad+'</label>';
+  sheetAc('Verileri sıfırla',
+    '<div class="not uyari">Seçtiğiniz veriler kalıcı olarak silinir ve geri alınamaz. Bu işlem tek seferliktir, bir kez yapınca düğme kaybolur.</div>'+
+    kut('sfKasa','Kasa kayıtları (gelir, gider, tahsilat)')+
+    kut('sfIs','İşlemdeki yıkamalar ve içerideki araçlar')+
+    kut('sfAb','Abonelikler ve yıkama paketleri')+
+    kut('sfMus','Müşteriler ve bakiyeleri')+
+    kut('sfPer','Personel isimleri')+
+    '<div class="soluk">Silinmeyenler: hizmetler, fiyatlar, tarifeler, gider türleri, stok ve giriş hesapları.</div>'+
+    '<button class="btn tehlike tam" style="margin-top:14px" onclick="sifirlaKaydet()">Seçilenleri sil</button>');
+}
+function sifirlaKaydet(){
+  const sec=id=>$(id)&&$(id).checked;
+  const kol=[];
+  if(sec('sfKasa'))kol.push('op_kasa');
+  if(sec('sfIs')){kol.push('op_yk');kol.push('op_pk')}
+  if(sec('sfAb')){kol.push('op_ab');kol.push('op_pkt')}
+  if(sec('sfMus'))kol.push('op_mus');
+  const per=sec('sfPer');
+  if(!kol.length&&!per){toast('Silinecek bir şey seçin');return}
+  const v=(prompt('Seçilen veriler kalıcı olarak silinecek. Onaylamak için SİL yazın.')||'').trim().toUpperCase().replace('İ','I');
+  if(v!=='SIL'){toast('Onaylanmadı, hiçbir şey silinmedi');return}
+  toast('Siliniyor…');
+  Promise.all(kol.map(koleksiyonSil)).then(()=>{
+    const o={sifirlandi:Date.now()};if(per)o.calisanlar=[];
+    ayarYaz(o);sheetKapat();toast('Seçilen veriler silindi');
   }).catch(hata);
 }
 function calEkle(){
@@ -1901,8 +1929,8 @@ function ayarCiz(){
     '<div class="arama" style="margin-top:6px"><input id="yeniKat" placeholder="Yeni kategori"><button class="btn" onclick="katEkle()">Ekle</button></div></div>'+
     '<div class="kart"><h3 style="font-size:21px;margin-bottom:4px">Personel isimleri</h3><div class="soluk" style="margin-bottom:8px">Giderlerde personel seçmek için isim listesi. Giriş hesabı gerekmez.</div>'+
     (D.ayar.calisanlar||[]).map((k,i)=>'<span class="etiket">'+esc(k)+'<button onclick="calSil('+i+')" aria-label="Sil">×</button></span>').join('')+
-    '<div class="arama" style="margin-top:6px"><input id="yeniCal" placeholder="Ad Soyad"><button class="btn" onclick="calEkle()">Ekle</button></div>'+
-    '<div style="height:12px"></div><button class="btn tehlike tam" onclick="giderTemizle()">Tüm giderleri ve personel isimlerini sil</button></div>'+
+    '<div class="arama" style="margin-top:6px"><input id="yeniCal" placeholder="Ad Soyad"><button class="btn" onclick="calEkle()">Ekle</button></div></div>'+
+    (D.ayar.sifirlandi?'':'<div class="kart"><h3 style="font-size:21px;margin-bottom:4px">Verileri sıfırla</h3><div class="soluk" style="margin-bottom:10px">Test kayıtlarını tek seferde temizlemek için. Bir kez kullanılabilir.</div><button class="btn tehlike tam" onclick="sifirlaAc()">Verileri sıfırla…</button></div>')+
     (FIREBASE_KULLAN?hesapKartlari():yerelKart());
 }
 function hesapKartlari(){
