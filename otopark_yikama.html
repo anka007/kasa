@@ -1764,7 +1764,8 @@ function sifirlaAc(){
     kut('sfMus','Müşteriler ve bakiyeleri')+
     kut('sfPer','Personel isimleri')+
     '<div class="soluk">Silinmeyenler: hizmetler, fiyatlar, tarifeler, gider türleri, stok ve giriş hesapları.</div>'+
-    '<button class="btn tehlike tam" style="margin-top:14px" onclick="sifirlaKaydet()">Seçilenleri sil</button>');
+    '<label>Onaylamak için aşağıya SİL yazın</label><input id="sfOnay" autocomplete="off" autocapitalize="characters" placeholder="SİL">'+
+    '<button id="sfDugme" class="btn tehlike tam" style="margin-top:14px" onclick="sifirlaKaydet()">Seçilenleri sil</button>');
 }
 function sifirlaKaydet(){
   const sec=id=>$(id)&&$(id).checked;
@@ -1775,13 +1776,18 @@ function sifirlaKaydet(){
   if(sec('sfMus'))kol.push('op_mus');
   const per=sec('sfPer');
   if(!kol.length&&!per){toast('Silinecek bir şey seçin');return}
-  const v=(prompt('Seçilen veriler kalıcı olarak silinecek. Onaylamak için SİL yazın.')||'').trim().toUpperCase().replace('İ','I');
-  if(v!=='SIL'){toast('Onaylanmadı, hiçbir şey silinmedi');return}
+  const v=(($('sfOnay')&&$('sfOnay').value)||'').trim().replace(/İ/g,'I').replace(/ı/g,'I').toUpperCase();
+  if(v!=='SIL'){toast('Onay kutusuna SİL yazın, hiçbir şey silinmedi');return}
+  const d=$('sfDugme');if(d){d.disabled=true;d.textContent='Siliniyor…'}
   toast('Siliniyor…');
-  Promise.all(kol.map(koleksiyonSil)).then(()=>{
+  Promise.all(kol.map(k=>koleksiyonSil(k).then(n=>[k,n]))).then(r=>{
     const o={sifirlandi:Date.now()};if(per)o.calisanlar=[];
-    ayarYaz(o);sheetKapat();toast('Seçilen veriler silindi');
-  }).catch(hata);
+    ayarYaz(o);sheetKapat();
+    toast('Silindi: '+r.reduce((a,x)=>a+x[1],0)+' kayıt'+(per?' ve personel isimleri':''));
+  }).catch(e=>{
+    if(d){d.disabled=false;d.textContent='Seçilenleri sil'}
+    toast('Silinemedi: '+((e&&e.message)||e));
+  });
 }
 function calEkle(){
   const v=$('yeniCal').value.trim();if(!v)return;
