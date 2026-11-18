@@ -203,6 +203,8 @@ label{display:block;font-size:13px;color:var(--soluk);margin:11px 0 4px}
       <button class="btn ikincil" onclick="csvIndir()">CSV indir</button>
     </div>
     <h3 class="bas">Hareketler</h3>
+    <div class="cips" id="kTurSek" style="margin-bottom:6px"></div>
+    <div id="kTurOzet" class="soluk" style="margin-bottom:6px"></div>
     <div id="kListe"></div>
   </section>
 
@@ -275,7 +277,7 @@ function varsayilanAyar(){return{
   personel:[],calisanlar:[],yoneticiler:[],ownerEmail:''}}
 const D={ayar:varsayilanAyar(),pk:[],ab:[],yk:[],pkt:[],stok:[],mus:[],musKasa:[],kasaBugun:[],kasaRapor:[]};
 const SEC={};
-let db=null,auth=null,user=null,rol='admin',aktif='park',uyeTab='park',kPer='ay',kBas='',kSon='',aranan='';
+let db=null,auth=null,user=null,rol='admin',aktif='park',uyeTab='park',kPer='ay',kTur='hepsi',kBas='',kSon='',aranan='';
 let ySinif='binek',yPaket=null,yPaketRed=false,ykSek='is',sarfListe=[];const stokGecmisHtml={};
 const unsubs=[];let unsubBugun=null,unsubRapor=null,unsubMusKasa=null,bugunKey='';
 let sheetTur='',musAy='',musSecili=null,musAra='',tazeleSay=0,sonTazele=0,uygCalisiyor=false;
@@ -1270,6 +1272,7 @@ function girdiAlt(x){
   if(x.tur==='abone'&&x.kisi)a.push(x.kisi);
   return a.join('  ');
 }
+function kTurSec(t){kTur=t;kasaCiz()}
 function kasaCiz(){
   $('kDonem').innerHTML=[['bugun','Bugün'],['hafta','Bu hafta'],['ay','Bu ay'],['ozel','Tarih aralığı']].map(x=>'<button class="cip'+(kPer===x[0]?' on':'')+'" onclick="donemSec(\''+x[0]+'\')">'+x[1]+'</button>').join('');
   $('kOzel').style.display=kPer==='ozel'?'grid':'none';
@@ -1288,8 +1291,13 @@ function kasaCiz(){
     (l.some(x=>x.odeme==='cari'||x.tur==='tahsilat')?'<div class="kart"><h3 style="font-size:20px;margin-bottom:4px">Müşteri tahsilatları</h3>'+
     sat('Nakit',topla(x=>x.tur==='tahsilat'&&x.odeme==='nakit'))+sat('Kart',topla(x=>x.tur==='tahsilat'&&x.odeme==='kart'))+sat('Havale',topla(x=>x.tur==='tahsilat'&&x.odeme==='havale'))+sat('Toplam tahsilat',topla(x=>x.tur==='tahsilat'),'gelir')+
     '<div class="soluk" style="margin-top:6px">Cari satışlar yazıldığı gün gelir sayılır. Tahsilatlar net kazanca ayrıca eklenmez.</div></div>':'');
-  $('kListe').innerHTML=l.length?l.map(x=>'<div class="satirSag"><div class="sol"><div class="iri" style="font-size:15px">'+esc(girdiBaslik(x))+'</div><div class="soluk">'+tarihGoster(tarihKey(x.tarih))+' '+saatStr(x.tarih)+'  '+esc(ODEME[x.odeme]||'')+'</div>'+(girdiAlt(x)?'<div class="soluk">'+esc(girdiAlt(x))+'</div>':'')+'</div>'+
-    '<div style="display:flex;align-items:center;gap:8px"><div class="sag '+(x.yon==='gider'?'gider':'gelir')+'">'+(x.yon==='gider'?'-':'+')+para(x.tutar)+'</div><button class="kapat" style="width:28px;height:28px;font-size:15px" onclick="kasaDuzenleAc(\''+x.id+'\')" aria-label="Düzenle">✎</button><button class="kapat" style="width:28px;height:28px;font-size:17px" onclick="kasaSil(\''+x.id+'\')" aria-label="Sil">×</button></div></div>').join(''):'<div class="soluk">Bu dönemde hareket yok.</div>';
+  const KTUR=[['hepsi','Tümü',x=>true],['gelir','Gelir',x=>x.yon==='gelir'],['yikama','Yıkama',x=>x.tur==='yikama'],['park','Otopark',x=>x.tur==='park'],['gider','Gider',x=>x.tur==='gider'],['tahsilat','Tahsilat',x=>x.tur==='tahsilat']];
+  const kt=KTUR.find(t=>t[0]===kTur)||KTUR[0];
+  $('kTurSek').innerHTML=KTUR.map(t=>'<button class="cip'+(kTur===t[0]?' on':'')+'" onclick="kTurSec(\''+t[0]+'\')">'+t[1]+' ('+l.filter(t[2]).length+')</button>').join('');
+  const lf=l.filter(kt[2]);
+  $('kTurOzet').textContent=(kTur==='hepsi'||!lf.length)?'':lf.length+' kayıt · toplam '+para(lf.reduce((a,x)=>a+(x.tutar||0),0));
+  $('kListe').innerHTML=lf.length?lf.map(x=>'<div class="satirSag"><div class="sol"><div class="iri" style="font-size:15px">'+esc(girdiBaslik(x))+'</div><div class="soluk">'+tarihGoster(tarihKey(x.tarih))+' '+saatStr(x.tarih)+'  '+esc(ODEME[x.odeme]||'')+'</div>'+(girdiAlt(x)?'<div class="soluk">'+esc(girdiAlt(x))+'</div>':'')+'</div>'+
+    '<div style="display:flex;align-items:center;gap:8px"><div class="sag '+(x.yon==='gider'?'gider':'gelir')+'">'+(x.yon==='gider'?'-':'+')+para(x.tutar)+'</div><button class="kapat" style="width:28px;height:28px;font-size:15px" onclick="kasaDuzenleAc(\''+x.id+'\')" aria-label="Düzenle">✎</button><button class="kapat" style="width:28px;height:28px;font-size:17px" onclick="kasaSil(\''+x.id+'\')" aria-label="Sil">×</button></div></div>').join(''):'<div class="soluk">'+(l.length?'Bu sekmede kayıt yok.':'Bu dönemde hareket yok.')+'</div>';
 }
 function kasaSil(id){
   const x=D.kasaRapor.concat(D.kasaBugun).find(y=>y.id===id);
