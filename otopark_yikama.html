@@ -1571,6 +1571,7 @@ function raporMusExcel(){
   r.hizmetler.forEach(x=>hr.push([x.ad,x.adet,P(x.tutar)]));
   hr.push(toplam('Toplam',3,r.hizmetler.length,r.ykTutar,2));
   sayfalar.push({ad:'Hizmetler',dondur:true,genislik:[28,10,14],satirlar:hr});
+  sayfalar.unshift(sayfalar.splice(1,1)[0]);
   const a=document.createElement('a');
   a.href=URL.createObjectURL(xlsxOlustur(sayfalar));
   a.download='rapor_'+plakaNorm(m.ad||'musteri')+'_'+rpBas+'_'+rpSon+'.xlsx';
@@ -1674,10 +1675,10 @@ function raporGenExcel(){
   if(rpTur==='gider'){
     const l=giderSuz(),toplam=r2(topTutar(l)),sy=[];
     sy.push({ad:'Özet',genislik:[30,28],satirlar:[[B('Gider raporu')],['Tarih aralığı',aralik],['Gider türü',rpKat||'Tümü'],['Personel',rpKisi||'Tümü'],['Kayıt sayısı',l.length],['Toplam gider',{v:toplam,s:4}]]});
-    const gr=[[H('Tarih'),H('Gider türü'),H('Personel'),H('Açıklama'),H('Ödeme'),H('Tutar')]];
-    l.forEach(x=>gr.push([T(x.tarih),x.kategori||'',giderKisi(x),(!x.kisi&&x.aciklama===giderKisi(x))?'':(x.aciklama||''),ODEME[x.odeme]||'',P(x.tutar)]));
-    gr.push(top('Toplam',6,l.length,toplam,5));
-    sy.push({ad:'Giderler',dondur:true,genislik:[13,22,20,34,12,14],satirlar:gr});
+    const gr=[[H('Tarih'),H('Saat'),H('Gider türü'),H('Personel'),H('Açıklama'),H('Ödeme'),H('Tutar'),H('Kaydeden')]];
+    l.forEach(x=>gr.push([T(x.tarih),saatStr(x.tarih),x.kategori||'',giderKisi(x),(!x.kisi&&x.aciklama===giderKisi(x))?'':(x.aciklama||''),ODEME[x.odeme]||'',P(x.tutar),x.ekleyen||'']));
+    gr.push(top('Toplam',8,l.length,toplam,6));
+    sy.push({ad:'Gider detayı',dondur:true,genislik:[13,8,22,20,36,12,14,28],satirlar:gr});
     const km={},pm={};
     l.forEach(x=>{const k=x.kategori||'Diğer';const e=km[k]=km[k]||[0,0];e[0]++;e[1]+=x.tutar||0;const p=giderKisi(x);if(p){const q=pm[p]=pm[p]||[0,0];q[0]++;q[1]+=x.tutar||0}});
     const kr=[[H('Gider türü'),H('Kayıt'),H('Tutar')]];Object.keys(km).sort((a,b)=>km[b][1]-km[a][1]).forEach(k=>kr.push([k,km[k][0],P(km[k][1])]));
@@ -1685,6 +1686,11 @@ function raporGenExcel(){
     sy.push({ad:'Türlere göre',dondur:true,genislik:[26,10,14],satirlar:kr});
     if(Object.keys(pm).length){const pr=[[H('Personel'),H('Kayıt'),H('Tutar')]];Object.keys(pm).sort((a,b)=>pm[b][1]-pm[a][1]).forEach(k=>pr.push([k,pm[k][0],P(pm[k][1])]));
       sy.push({ad:'Personele göre',dondur:true,genislik:[26,10,14],satirlar:pr})}
+    const oz=sy[0].satirlar;
+    oz.push([]);oz.push([B('Gider türüne göre')]);
+    Object.keys(km).sort((a,b)=>km[b][1]-km[a][1]).forEach(k=>oz.push([k+' ('+km[k][0]+' kayıt)',P(km[k][1])]));
+    if(Object.keys(pm).length){oz.push([]);oz.push([B('Personele göre')]);Object.keys(pm).sort((a,b)=>pm[b][1]-pm[a][1]).forEach(k=>oz.push([k+' ('+pm[k][0]+' kayıt)',P(pm[k][1])]))}
+    sy.unshift(sy.splice(1,1)[0]);
     xlIndir(sy,'gider_raporu_'+dosya);return;
   }
   const g=genHesapla(),sy=[];
@@ -1705,7 +1711,9 @@ function raporGenExcel(){
     kr.push(top('Toplam',3,g.giderKat.length,g.gider,2));sy.push({ad:'Giderler',dondur:true,genislik:[26,10,14],satirlar:kr})}
   const hr=[[H('Tarih'),H('Saat'),H('Tür'),H('Plaka'),H('Müşteri'),H('Detay'),H('Ödeme'),H('Gelir'),H('Gider'),H('Tahsilat')]];
   g.l.forEach(x=>{const gid=x.tur==='gider',th=x.tur==='tahsilat';hr.push([T(x.tarih),saatStr(x.tarih),girdiBaslik(x),x.plaka?plakaFmt(x.plaka):'',x.musAd||'',String(girdiAlt(x)||''),ODEME[x.odeme]||'',(!gid&&!th)?P(x.tutar):'',gid?P(x.tutar):'',th?P(x.tutar):''])});
-  sy.push({ad:'Hareketler',dondur:true,genislik:[13,8,20,14,24,34,12,14,14,14],satirlar:hr});
+  if(g.l.length){const n=g.l.length+1,tf=(c,v)=>({v:v,s:4,f:'SUM('+c+'2:'+c+n+')'});hr.push([B('Toplam'),'','','','','','',tf('H',g.gelir),tf('I',g.gider),tf('J',g.tahsilat)])}
+  sy.push({ad:'Detaylı hareketler',dondur:true,genislik:[13,8,20,14,24,34,12,14,14,14],satirlar:hr});
+  sy.unshift(sy.pop());
   xlIndir(sy,'genel_rapor_'+dosya);
 }
 // ===================== PERSONEL İSİMLERİ =====================
@@ -1726,6 +1734,18 @@ function calisanSecDeg(id){
   ayarYaz({calisanlar:l});
   const o=document.createElement('option');o.textContent=ad;
   el.insertBefore(o,el.querySelector('option[value="__yeni"]'));el.value=ad;
+}
+function giderTemizle(){
+  if(!confirm('TÜM gider kayıtları ve personel isimleri kalıcı olarak silinecek. Gelir, yıkama, otopark ve müşteri kayıtlarına dokunulmaz. Devam edilsin mi?'))return;
+  if(!confirm('Bu işlem geri alınamaz. Gerçekten silinsin mi?'))return;
+  db.collection('op_kasa').where('tur','==','gider').get().then(s=>{
+    const idler=s.docs.map(d=>d.id),isler=[];
+    for(let i=0;i<idler.length;i+=400){
+      const b=db.batch();idler.slice(i,i+400).forEach(id=>b.delete(db.collection('op_kasa').doc(id)));
+      isler.push(b.commit());
+    }
+    return Promise.all(isler).then(()=>{ayarYaz({calisanlar:[]});toast(idler.length+' gider kaydı ve personel isimleri silindi')});
+  }).catch(hata);
 }
 function calEkle(){
   const v=$('yeniCal').value.trim();if(!v)return;
@@ -1873,7 +1893,8 @@ function ayarCiz(){
     '<div class="arama" style="margin-top:6px"><input id="yeniKat" placeholder="Yeni kategori"><button class="btn" onclick="katEkle()">Ekle</button></div></div>'+
     '<div class="kart"><h3 style="font-size:21px;margin-bottom:4px">Personel isimleri</h3><div class="soluk" style="margin-bottom:8px">Giderlerde personel seçmek için isim listesi. Giriş hesabı gerekmez.</div>'+
     (D.ayar.calisanlar||[]).map((k,i)=>'<span class="etiket">'+esc(k)+'<button onclick="calSil('+i+')" aria-label="Sil">×</button></span>').join('')+
-    '<div class="arama" style="margin-top:6px"><input id="yeniCal" placeholder="Ad Soyad"><button class="btn" onclick="calEkle()">Ekle</button></div></div>'+
+    '<div class="arama" style="margin-top:6px"><input id="yeniCal" placeholder="Ad Soyad"><button class="btn" onclick="calEkle()">Ekle</button></div>'+
+    '<div style="height:12px"></div><button class="btn tehlike tam" onclick="giderTemizle()">Tüm giderleri ve personel isimlerini sil</button></div>'+
     (FIREBASE_KULLAN?hesapKartlari():yerelKart());
 }
 function hesapKartlari(){
