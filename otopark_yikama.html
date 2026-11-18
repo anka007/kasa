@@ -272,7 +272,7 @@ function varsayilanAyar(){return{
     {id:'h4',isim:'Detaylı temizlik',fiyat:{binek:1500,suv:1800,ticari:2200}}
   ],
   giderKat:['Personel','Elektrik','Su','Kimyasal ve malzeme','Kira','Bakım','Diğer'],
-  personel:[],yoneticiler:[],ownerEmail:''}}
+  personel:[],calisanlar:[],yoneticiler:[],ownerEmail:''}}
 const D={ayar:varsayilanAyar(),pk:[],ab:[],yk:[],pkt:[],stok:[],mus:[],musKasa:[],kasaBugun:[],kasaRapor:[]};
 const SEC={};
 let db=null,auth=null,user=null,rol='admin',aktif='park',uyeTab='park',kPer='ay',kBas='',kSon='',aranan='';
@@ -633,6 +633,7 @@ function cikisAc(id){
     '<label>Ödeme</label>'+odemeCips('cOdeme',mid?'cari':'nakit',true)+
     '<button class="btn tam" style="margin-top:14px" onclick="cikisKaydet(\''+id+'\','+(ab?1:0)+')">Çıkışı kaydet</button>'+
     '<div style="height:8px"></div>'+
+    '<button class="btn ikincil tam" onclick="parkDuzenleAc(\''+id+'\')">Girişi düzenle (plaka, giriş zamanı)</button><div style="height:8px"></div>'+
     '<button class="btn tehlike tam" onclick="girisIptal(\''+id+'\')">Girişi iptal et (hatalı kayıt)</button>');
 }
 function cikisKaydet(id,abFlag){
@@ -676,7 +677,7 @@ function yikamaCiz(){
       '<div class="iri" style="margin-top:6px">'+esc(j.hizmet)+'</div>'+
       '<div class="soluk">'+esc(SINIF[j.sinif]||'')+(j.kisi?' · '+esc(j.kisi):'')+(j.musAd?' · '+esc(j.musAd):'')+'</div>'+
       '<div class="ustSatir" style="margin-top:8px"><span class="num" style="font-size:22px;font-weight:600">'+(p?'Paketten':para(j.fiyat))+'</span>'+
-      '</div>'+(j.bay?'<div class="not mavi" style="margin:8px 0 0">'+j.bay+' nolu otopark alanında bekliyor: '+sureStr((simdi-(j.bekleBas||j.giris))/60000)+' (ücretsiz)<br>Yıkama bitişi: '+tarihGoster(tarihKey(j.bekleBas||j.giris))+' '+saatStr(j.bekleBas||j.giris)+'</div>':'')+'<div class="satirBtn" style="justify-content:flex-end"><button class="btn ikincil kucuk" onclick="yikamaBayAc(\''+j.id+'\')">'+(j.bay?'Alanı değiştir':'Otoparka al')+'</button><button class="btn su kucuk" onclick="teslimAc(\''+j.id+'\')">Teslim et</button></div></div>';
+      '</div>'+(j.bay?'<div class="not mavi" style="margin:8px 0 0">'+j.bay+' nolu otopark alanında bekliyor: '+sureStr((simdi-(j.bekleBas||j.giris))/60000)+' (ücretsiz)<br>Yıkama bitişi: '+tarihGoster(tarihKey(j.bekleBas||j.giris))+' '+saatStr(j.bekleBas||j.giris)+'</div>':'')+'<div class="satirBtn" style="justify-content:flex-end"><button class="btn ikincil kucuk" onclick="yikamaDuzenleAc(\''+j.id+'\')">Düzenle</button><button class="btn ikincil kucuk" onclick="yikamaBayAc(\''+j.id+'\')">'+(j.bay?'Alanı değiştir':'Otoparka al')+'</button><button class="btn su kucuk" onclick="teslimAc(\''+j.id+'\')">Teslim et</button></div></div>';
   }).join(''):'<div class="kart soluk">İşlemde araç yok. Yeni yıkama başlatın.</div>';
   const b=D.kasaBugun.filter(x=>x.tur==='yikama').sort((x,y)=>y.tarih-x.tarih);
   $('ykBitti').innerHTML=b.length?b.map(x=>'<div class="satirSag"><div class="sol">'+plakaHtml(x.plaka)+'<div class="soluk">'+esc(x.hizmet||'')+' '+saatStr(x.tarih)+'</div></div><div class="sag">'+(x.odeme==='paket'?'Paket':(adm?para(x.tutar):''))+'</div></div>').join(''):'<div class="soluk">Bugün teslim edilen yok.</div>';
@@ -1288,7 +1289,7 @@ function kasaCiz(){
     sat('Nakit',topla(x=>x.tur==='tahsilat'&&x.odeme==='nakit'))+sat('Kart',topla(x=>x.tur==='tahsilat'&&x.odeme==='kart'))+sat('Havale',topla(x=>x.tur==='tahsilat'&&x.odeme==='havale'))+sat('Toplam tahsilat',topla(x=>x.tur==='tahsilat'),'gelir')+
     '<div class="soluk" style="margin-top:6px">Cari satışlar yazıldığı gün gelir sayılır. Tahsilatlar net kazanca ayrıca eklenmez.</div></div>':'');
   $('kListe').innerHTML=l.length?l.map(x=>'<div class="satirSag"><div class="sol"><div class="iri" style="font-size:15px">'+esc(girdiBaslik(x))+'</div><div class="soluk">'+tarihGoster(tarihKey(x.tarih))+' '+saatStr(x.tarih)+'  '+esc(ODEME[x.odeme]||'')+'</div>'+(girdiAlt(x)?'<div class="soluk">'+esc(girdiAlt(x))+'</div>':'')+'</div>'+
-    '<div style="display:flex;align-items:center;gap:8px"><div class="sag '+(x.yon==='gider'?'gider':'gelir')+'">'+(x.yon==='gider'?'-':'+')+para(x.tutar)+'</div><button class="kapat" style="width:28px;height:28px;font-size:17px" onclick="kasaSil(\''+x.id+'\')" aria-label="Sil">×</button></div></div>').join(''):'<div class="soluk">Bu dönemde hareket yok.</div>';
+    '<div style="display:flex;align-items:center;gap:8px"><div class="sag '+(x.yon==='gider'?'gider':'gelir')+'">'+(x.yon==='gider'?'-':'+')+para(x.tutar)+'</div><button class="kapat" style="width:28px;height:28px;font-size:15px" onclick="kasaDuzenleAc(\''+x.id+'\')" aria-label="Düzenle">✎</button><button class="kapat" style="width:28px;height:28px;font-size:17px" onclick="kasaSil(\''+x.id+'\')" aria-label="Sil">×</button></div></div>').join(''):'<div class="soluk">Bu dönemde hareket yok.</div>';
 }
 function kasaSil(id){
   const x=D.kasaRapor.concat(D.kasaBugun).find(y=>y.id===id);
@@ -1308,8 +1309,8 @@ function giderKisiListe(){
 function giderAc(){
   sheetAc('Gider ekle',
     '<label>Tutar</label><input id="gTutar" type="number" inputmode="decimal">'+
-    '<label>Kategori</label><select id="gKat">'+D.ayar.giderKat.map(k=>'<option>'+esc(k)+'</option>').join('')+'</select>'+
-    '<label>Personel (maaş, avans vb. için, isteğe bağlı)</label><input id="gKisi" list="gKisiListe" placeholder="Ad Soyad" autocomplete="off"><datalist id="gKisiListe">'+giderKisiListe().map(k=>'<option value="'+esc(k)+'">').join('')+'</datalist>'+
+    '<label>Kategori</label><select id="gKat" onchange="giderKatDeg()">'+D.ayar.giderKat.map(k=>'<option>'+esc(k)+'</option>').join('')+'</select>'+
+    '<div id="gKisiKutu" style="display:'+(D.ayar.giderKat[0]==='Personel'?'':'none')+'"><label>Personel</label>'+calisanSecHtml('gKisi','')+'</div>'+
     '<label>Ödeme</label>'+odemeCips('gOdeme','nakit')+
     '<label>Tarih</label><input id="gTarih" type="date" value="'+tarihKey(Date.now())+'">'+
     '<label>Not (isteğe bağlı)</label><input id="gAciklama">'+
@@ -1321,7 +1322,7 @@ function giderKaydet(){
   const key=$('gTarih').value||tarihKey(Date.now());
   const a=key.split('-').map(Number),n=new Date();
   const ms=new Date(a[0],a[1]-1,a[2],n.getHours(),n.getMinutes()).getTime();
-  yaz('op_kasa',yeniId(),{tarih:ms,tur:'gider',yon:'gider',tutar:t,odeme:SEC.gOdeme||'nakit',kategori:$('gKat').value,kisi:$('gKisi').value.trim(),aciklama:$('gAciklama').value.trim(),ekleyen:user.email});
+  yaz('op_kasa',yeniId(),{tarih:ms,tur:'gider',yon:'gider',tutar:t,odeme:SEC.gOdeme||'nakit',kategori:$('gKat').value,kisi:giderKisiDeger(),aciklama:$('gAciklama').value.trim(),ekleyen:user.email});
   sheetKapat();toast('Gider kaydedildi');
 }
 function csvIndir(){
@@ -1707,6 +1708,153 @@ function raporGenExcel(){
   sy.push({ad:'Hareketler',dondur:true,genislik:[13,8,20,14,24,34,12,14,14,14],satirlar:hr});
   xlIndir(sy,'genel_rapor_'+dosya);
 }
+// ===================== PERSONEL İSİMLERİ =====================
+function calisanListe(){
+  const l=(D.ayar.calisanlar||[]).slice();
+  giderKisiListe().forEach(k=>{if(l.indexOf(k)<0)l.push(k)});
+  return l.sort((a,b)=>a.localeCompare(b,'tr'));
+}
+function calisanSecHtml(id,sel){
+  const l=calisanListe();if(sel&&l.indexOf(sel)<0)l.push(sel);
+  return '<select id="'+id+'" onchange="calisanSecDeg(\''+id+'\')"><option value="">Personel seçin</option>'+l.map(k=>'<option'+(k===sel?' selected':'')+'>'+esc(k)+'</option>').join('')+'<option value="__yeni">+ Yeni personel ekle…</option></select>';
+}
+function calisanSecDeg(id){
+  const el=$(id);if(!el||el.value!=='__yeni')return;
+  const ad=(prompt('Personelin adı soyadı')||'').trim();
+  if(!ad){el.value='';return}
+  const l=(D.ayar.calisanlar||[]).slice();if(l.indexOf(ad)<0)l.push(ad);
+  ayarYaz({calisanlar:l});
+  const o=document.createElement('option');o.textContent=ad;
+  el.insertBefore(o,el.querySelector('option[value="__yeni"]'));el.value=ad;
+}
+function calEkle(){
+  const v=$('yeniCal').value.trim();if(!v)return;
+  const l=(D.ayar.calisanlar||[]).slice();if(l.indexOf(v)<0)l.push(v);ayarYaz({calisanlar:l});
+}
+function calSil(i){const l=(D.ayar.calisanlar||[]).slice();l.splice(i,1);ayarYaz({calisanlar:l})}
+function giderKatDeg(){const k=$('gKat').value,b=$('gKisiKutu');if(b)b.style.display=k==='Personel'?'':'none'}
+function giderKisiDeger(){const e=$('gKisi');return($('gKat').value==='Personel'&&e&&e.value&&e.value!=='__yeni')?e.value:''}
+
+// ===================== KAYITLARI DÜZENLEME =====================
+function hizSecHtml(id,adSel,idSel){
+  let bulundu=false;
+  const o=D.ayar.hizmetler.map(h=>{const s=(idSel&&h.id===idSel)||(!idSel&&adSel&&h.isim===adSel);if(s)bulundu=true;return '<option value="'+h.id+'"'+(s?' selected':'')+'>'+esc(h.isim)+'</option>'}).join('');
+  return '<select id="'+id+'">'+(!bulundu&&adSel?'<option value="__mevcut" selected>'+esc(adSel)+'</option>':'')+o+'</select>';
+}
+function sinifSecHtml(id,sel){
+  return '<select id="'+id+'">'+['binek','suv','ticari'].map(k=>'<option value="'+k+'"'+(k===sel?' selected':'')+'>'+SINIF[k]+'</option>').join('')+'</select>';
+}
+function kasaEtki(tur,yon,odeme,tutar){return tur==='tahsilat'?-tutar:((yon==='gelir'&&odeme==='cari')?tutar:0)}
+function kasaDuzenleAc(id){
+  const x=D.kasaRapor.concat(D.kasaBugun).find(y=>y.id===id);if(!x){toast('Kayıt bulunamadı');return}
+  const gider=x.tur==='gider',th=x.tur==='tahsilat',park=x.tur==='park',yk=x.tur==='yikama',musOk=park||yk||th;
+  let h='<div class="soluk">'+esc(girdiBaslik(x))+(x.plaka?' · '+plakaFmt(x.plaka):'')+'</div>';
+  h+='<label>Tutar</label><input id="kdTutar" type="number" inputmode="decimal" step="any" value="'+(x.tutar||0)+'">';
+  if(park)h+='<label>Giriş tarihi ve saati</label><input id="kdGiris" type="datetime-local" value="'+dtl(x.giris||x.tarih)+'">';
+  h+='<label>'+(park?'Çıkış':(yk?'Yıkama':'İşlem'))+' tarihi ve saati</label><input id="kdTarih" type="datetime-local" value="'+dtl(x.tarih)+'">';
+  if(park||yk)h+='<label>Plaka</label><input id="kdPlaka" class="plakaGiris" autocapitalize="characters" autocomplete="off" value="'+esc(x.plaka?plakaFmt(x.plaka):'')+'">';
+  if(yk)h+='<label>Hizmet</label>'+hizSecHtml('kdHizmet',x.hizmet,'')+'<label>Araç sınıfı</label>'+sinifSecHtml('kdSinif',x.sinif||'binek');
+  if(gider){
+    const kats=D.ayar.giderKat.slice();if(x.kategori&&kats.indexOf(x.kategori)<0)kats.push(x.kategori);
+    h+='<label>Gider türü</label><select id="kdKat" onchange="kdKatDeg()">'+kats.map(k=>'<option'+(k===x.kategori?' selected':'')+'>'+esc(k)+'</option>').join('')+'</select>'+
+       '<div id="kdKisiKutu" style="display:'+(x.kategori==='Personel'?'':'none')+'"><label>Personel</label>'+calisanSecHtml('kdKisi',giderKisi(x))+'</div>'+
+       '<label>Not</label><input id="kdNot" value="'+esc(x.kisi?(x.aciklama||''):(x.kategori==='Personel'&&x.aciklama===giderKisi(x)?'':(x.aciklama||'')))+'">';
+  }
+  if(musOk)h+='<label>Müşteri</label>'+musSecimHtml('kdMus',x.musId||'','');
+  h+='<label>Ödeme</label>'+odemeCips('kdOdeme',x.odeme,!gider&&!th);
+  h+='<button class="btn tam" style="margin-top:14px" onclick="kasaDuzenleKaydet(\''+id+'\')">Değişiklikleri kaydet</button>';
+  if(musOk||(!gider))h+='<div class="soluk" style="margin-top:8px">Cari tutar veya müşteri değişirse müşteri bakiyesi de düzeltilir.</div>';
+  sheetAc('Kaydı düzenle',h);
+}
+function kdKatDeg(){const b=$('kdKisiKutu');if(b)b.style.display=$('kdKat').value==='Personel'?'':'none'}
+function kasaDuzenleKaydet(id){
+  const x=D.kasaRapor.concat(D.kasaBugun).find(y=>y.id===id);if(!x){toast('Kayıt bulunamadı');return}
+  const gider=x.tur==='gider',th=x.tur==='tahsilat',park=x.tur==='park',yk=x.tur==='yikama',musOk=park||yk||th;
+  const t=parseFloat($('kdTutar').value);
+  if(isNaN(t)||t<0){toast('Tutarı girin');return}
+  const tarih=dtlMs($('kdTarih').value)||x.tarih;
+  if(tarih>Date.now()+60000){toast('Tarih ileri tarihli olamaz');return}
+  const odeme=SEC.kdOdeme||x.odeme;
+  const o={tutar:t,tarih:tarih,odeme:odeme};
+  if(park){const g=dtlMs($('kdGiris').value)||x.giris;if(!(g<tarih)){toast('Giriş zamanı çıkıştan önce olmalı');return}o.giris=g;o.cikis=tarih}
+  if(park||yk){const pl=plakaNorm($('kdPlaka').value);if(pl.length<4){toast('Plakayı girin');return}o.plaka=pl}
+  if(yk){
+    const hv=$('kdHizmet').value;if(hv!=='__mevcut'){const hz=D.ayar.hizmetler.find(h=>h.id===hv);if(hz)o.hizmet=hz.isim}
+    o.sinif=$('kdSinif').value;
+    if(x.bekleBas&&x.bekleBas===x.tarih)o.bekleBas=tarih;
+  }
+  if(gider){
+    o.kategori=$('kdKat').value;
+    const kv=$('kdKisi')?$('kdKisi').value:'';
+    o.kisi=(o.kategori==='Personel'&&kv&&kv!=='__yeni')?kv:'';
+    o.aciklama=$('kdNot').value.trim();
+  }
+  let yeniMus=x.musId||'';
+  if(musOk){
+    const mid=$('kdMus').value||'',mm=mid?D.mus.find(m=>m.id===mid):null;
+    o.musId=mm?mm.id:'';o.musAd=mm?mm.ad:'';yeniMus=o.musId;
+  }
+  if(odeme==='cari'&&!yeniMus){toast('Cari ödeme için müşteri seçin');return}
+  const eskiE=kasaEtki(x.tur,x.yon,x.odeme,x.tutar||0),yeniE=kasaEtki(x.tur,x.yon,odeme,t),eskiMus=x.musId||'';
+  const var_=m=>m&&D.mus.some(y=>y.id===m);
+  const b=db.batch();
+  b.update(db.collection('op_kasa').doc(id),o);
+  if(eskiMus===yeniMus){
+    const d=yeniE-eskiE;
+    if(d&&var_(yeniMus))b.update(db.collection('op_mus').doc(yeniMus),{borc:artir(d)});
+  }else{
+    if(eskiE&&var_(eskiMus))b.update(db.collection('op_mus').doc(eskiMus),{borc:artir(-eskiE)});
+    if(yeniE&&var_(yeniMus))b.update(db.collection('op_mus').doc(yeniMus),{borc:artir(yeniE)});
+  }
+  b.commit().catch(hata);
+  sheetKapat();toast('Kayıt güncellendi');
+}
+function yikamaDuzenleAc(id){
+  const j=D.yk.find(x=>x.id===id);if(!j)return;
+  sheetAc('Yıkamayı düzenle',
+    '<label>Plaka</label><input id="ydPlaka" class="plakaGiris" autocapitalize="characters" autocomplete="off" value="'+esc(plakaFmt(j.plaka))+'">'+
+    '<label>Hizmet</label>'+hizSecHtml('ydHizmet',j.hizmet,j.hizmetId)+
+    '<label>Araç sınıfı</label>'+sinifSecHtml('ydSinif',j.sinif||'binek')+
+    (j.paketId?'<div class="not mavi">Bu yıkama bir paket hakkından yapılıyor, fiyat 0 kalır.</div>':'<label>Fiyat</label><input id="ydFiyat" type="number" inputmode="decimal" step="any" value="'+(j.fiyat||0)+'">')+
+    '<label>Müşteri (isteğe bağlı)</label>'+musSecimHtml('ydMus',j.musId||'','')+
+    '<label>Yıkama tarihi ve saati</label><input id="ydTar" type="datetime-local" value="'+dtl(j.giris)+'">'+
+    '<label>Yıkayan (isteğe bağlı)</label><input id="ydKisi" value="'+esc(j.kisi||'')+'">'+
+    '<button class="btn tam" style="margin-top:14px" onclick="yikamaDuzenleKaydet(\''+id+'\')">Değişiklikleri kaydet</button>');
+}
+function yikamaDuzenleKaydet(id){
+  const j=D.yk.find(x=>x.id===id);if(!j)return;
+  const pl=plakaNorm($('ydPlaka').value);if(pl.length<4){toast('Plakayı girin');return}
+  if(pl!==j.plaka&&D.yk.some(x=>x.id!==id&&x.plaka===pl)&&!confirm('Bu plaka zaten işlemde. Yine de kaydedilsin mi?'))return;
+  const gz=dtlMs($('ydTar').value)||j.giris;
+  if(gz>Date.now()+60000){toast('Yıkama zamanı ileri tarihli olamaz');return}
+  const o={plaka:pl,sinif:$('ydSinif').value,giris:gz,tarihli:gz<Date.now()-300000,kisi:$('ydKisi').value.trim()};
+  const hv=$('ydHizmet').value;if(hv!=='__mevcut'){const hz=D.ayar.hizmetler.find(h=>h.id===hv);if(hz){o.hizmetId=hz.id;o.hizmet=hz.isim}}
+  if($('ydFiyat'))o.fiyat=Math.max(0,parseFloat($('ydFiyat').value)||0);
+  const mid=$('ydMus').value||'',mm=mid?D.mus.find(x=>x.id===mid):null;
+  o.musId=mm?mm.id:'';o.musAd=mm?mm.ad:'';
+  db.collection('op_yk').doc(id).update(o).catch(hata);
+  sheetKapat();toast('Yıkama güncellendi');
+}
+function parkDuzenleAc(id){
+  const s=D.pk.find(x=>x.id===id);if(!s)return;
+  sheetAc('Girişi düzenle',
+    '<label>Plaka</label><input id="pdPlaka" class="plakaGiris" autocapitalize="characters" autocomplete="off" value="'+esc(plakaFmt(s.plaka))+'">'+
+    '<label>Giriş tarihi ve saati</label><input id="pdGiris" type="datetime-local" value="'+dtl(s.giris)+'">'+
+    '<label>Müşteri (isteğe bağlı)</label>'+musSecimHtml('pdMus',s.musId||'','')+
+    '<label>Not</label><input id="pdNot" value="'+esc(s.not||'')+'">'+
+    '<button class="btn tam" style="margin-top:14px" onclick="parkDuzenleKaydet(\''+id+'\')">Değişiklikleri kaydet</button>');
+}
+function parkDuzenleKaydet(id){
+  const s=D.pk.find(x=>x.id===id);if(!s)return;
+  const pl=plakaNorm($('pdPlaka').value);if(pl.length<4){toast('Plakayı girin');return}
+  if(D.pk.some(x=>x.id!==id&&x.plaka===pl)){toast('Bu araç zaten içeride');return}
+  const g=dtlMs($('pdGiris').value)||s.giris;
+  if(g>Date.now()+60000){toast('Giriş zamanı ileri tarihli olamaz');return}
+  const mid=$('pdMus').value||'',mm=mid?D.mus.find(x=>x.id===mid):null;
+  db.collection('op_pk').doc(id).update({plaka:pl,giris:g,not:$('pdNot').value.trim(),musId:mm?mm.id:'',musAd:mm?mm.ad:''}).catch(hata);
+  sheetKapat();toast('Giriş güncellendi');
+}
+
 // ===================== AYARLAR =====================
 function ayarYaz(o){db.collection('op_ayar').doc('main').set(o,{merge:true}).catch(hata)}
 function ayarCiz(){
@@ -1723,6 +1871,9 @@ function ayarCiz(){
     '<div class="kart"><h3 style="font-size:21px;margin-bottom:8px">Gider kategorileri</h3>'+
     D.ayar.giderKat.map((k,i)=>'<span class="etiket">'+esc(k)+'<button onclick="katSil('+i+')" aria-label="Sil">×</button></span>').join('')+
     '<div class="arama" style="margin-top:6px"><input id="yeniKat" placeholder="Yeni kategori"><button class="btn" onclick="katEkle()">Ekle</button></div></div>'+
+    '<div class="kart"><h3 style="font-size:21px;margin-bottom:4px">Personel isimleri</h3><div class="soluk" style="margin-bottom:8px">Giderlerde personel seçmek için isim listesi. Giriş hesabı gerekmez.</div>'+
+    (D.ayar.calisanlar||[]).map((k,i)=>'<span class="etiket">'+esc(k)+'<button onclick="calSil('+i+')" aria-label="Sil">×</button></span>').join('')+
+    '<div class="arama" style="margin-top:6px"><input id="yeniCal" placeholder="Ad Soyad"><button class="btn" onclick="calEkle()">Ekle</button></div></div>'+
     (FIREBASE_KULLAN?hesapKartlari():yerelKart());
 }
 function hesapKartlari(){
